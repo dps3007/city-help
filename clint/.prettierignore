@@ -1,0 +1,36 @@
+# Dependencies
+node_modules
+bower_components
+
+# Build output
+dist
+build
+.out
+.next
+coverage
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Version control
+.git
+.gitignore
+
+# IDE / editor folders
+.vscode
+.idea
+
+# Package locks
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
