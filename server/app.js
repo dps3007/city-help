@@ -9,7 +9,6 @@ import feedbackRoutes from './routes/feedback.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import rewardRoutes from './routes/reward.routes.js';
 import adminRoutes from './routes/admin.routes.js';
-import mongoSanitize from 'express-mongo-sanitize';
 import { errorHandler } from './middlewares/error.middleware.js';
 import helmet from "helmet";
 
@@ -20,7 +19,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
-app.use(mongoSanitize({replaceWith: '_',}));
+
 
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
