@@ -1,0 +1,19 @@
+import Joi from 'joi';
+
+export const createComplaintSchema = Joi.object({
+  category: Joi.string()
+    .valid('GARBAGE', 'ROADS', 'WATER', 'STREETLIGHT', 'ELECTRICITY', 'OTHER')
+    .required(),
+
+  description: Joi.string().min(10).max(1000).required(),
+
+  location: Joi.object({
+    city: Joi.string().required(),
+    district: Joi.string().required(),
+    state: Joi.string().required(),
+    coordinates: Joi.object({
+      lat: Joi.number().required(),
+      lng: Joi.number().required(),
+    }),
+  }).required(),
+});
