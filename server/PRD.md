@@ -132,3 +132,59 @@ File Uploads Multer + Cloudinary
 Real-Time Socket.io
 Testing Jest / Postman
 Deployment Render / Vercel / Railway
+
+🚀 CITY HELP — PRODUCTION BACKEND FOLDER STRUCTURE (Final Version)
+city-help-backend/
+│
+├── src/
+│   ├── config/
+│   │   ├── env.js
+│   │   └── db.js
+│   │
+│   ├── models/
+│   │   ├── user.model.js
+│   │   ├── complaint.model.js
+│   │   └── admin.model.js (optional)
+│   │
+│   ├── repositories/
+│   │   ├── user.repository.js
+│   │   ├── complaint.repository.js
+│   │   └── admin.repository.js (optional)
+│   │
+│   ├── services/
+│   │   ├── user.service.js
+│   │   ├── complaint.service.js
+│   │   └── admin.service.js
+│   │
+│   ├── controllers/
+│   │   ├── auth.controller.js
+│   │   ├── user.controller.js
+│   │   ├── complaint.controller.js
+│   │   └── admin.controller.js
+│   │
+│   ├── routes/
+│   │   ├── auth.routes.js
+│   │   ├── user.routes.js
+│   │   ├── complaint.routes.js
+│   │   └── admin.routes.js
+│   │
+│   ├── middlewares/
+│   │   ├── auth.middleware.js
+│   │   ├── error.middleware.js
+│   │   ├── validation.middleware.js
+│   │   └── rateLimit.middleware.js
+│   │
+│   ├── utils/
+│   │   ├── ApiError.js
+│   │   ├── ApiResponse.js
+│   │   └── logger.js
+│   │
+│   ├── validators/
+│   │   ├── auth.validators.js
+│   │   ├── user.validators.js
+│   │   └── complaint.validators.js
+│   │
+│   ├── app.js
+│   └── server.js
+│
+└── package.json
