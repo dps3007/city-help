@@ -3,9 +3,29 @@ import User from '../models/user.model.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
 export const register = asyncHandler(async (req, res) => {
-  await User.create(req.body);
+  const { name, email, password } = req.body;
+
+  if (!name || !email || !password) {
+    res.status(400);
+    throw new Error('Name, email and password are required');
+  }
+
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    res.status(409);
+    throw new Error('User already exists');
+  }
+
+  await User.create({
+    name,
+    email,
+    password,
+    role: 'CITIZEN', // 🔒 force default role
+  });
+
   res.status(201).json({ success: true });
 });
+
 
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -47,10 +67,21 @@ export const refreshToken = asyncHandler(async (req, res) => {
 export const logout = asyncHandler(async (req, res) => {
   const { refreshToken } = req.body;
 
-  req.user.refreshTokens = req.user.refreshTokens.filter(
+  if (!refreshToken) {
+    res.status(400);
+    throw new Error('Refresh token required');
+  }
+
+  const user = await User.findOne({ refreshTokens: refreshToken });
+  if (!user) {
+    return res.json({ success: true }); // token already invalid
+  }
+
+  user.refreshTokens = user.refreshTokens.filter(
     t => t !== refreshToken
   );
 
-  await req.user.save();
+  await user.save();
   res.json({ success: true });
 });
+

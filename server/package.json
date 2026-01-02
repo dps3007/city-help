@@ -21,8 +21,10 @@
     "helmet": "^8.1.0",
     "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.2",
+    "mailgen": "^2.0.32",
     "mongoose": "^8.19.2",
-    "morgan": "^1.10.1"
+    "morgan": "^1.10.1",
+    "nodemailer": "^7.0.12"
   },
   "devDependencies": {
     "nodemon": "^3.1.10",

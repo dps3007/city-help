@@ -1,7 +1,30 @@
 import mongoose, { Schema } from 'mongoose';
 
+const STATUS_ENUM = [
+  'SUBMITTED',
+  'VERIFIED',
+  'ASSIGNED',
+  'IN_PROGRESS',
+  'RESOLVED',
+  'CLOSED',
+];
+
+const CATEGORY_ENUM = [
+  'GARBAGE',
+  'ROADS',
+  'WATER',
+  'STREETLIGHT',
+  'ELECTRICITY',
+  'OTHER',
+];
+
+const ATTACHMENT_TYPE = ['IMAGE', 'VIDEO', 'PDF'];
+
 const complaintSchema = new Schema(
   {
+    /* =======================
+       OWNERSHIP
+    ======================= */
     citizen: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -9,16 +32,12 @@ const complaintSchema = new Schema(
       index: true,
     },
 
+    /* =======================
+       CORE DETAILS
+    ======================= */
     category: {
       type: String,
-      enum: [
-        'GARBAGE',
-        'ROADS',
-        'WATER',
-        'STREETLIGHT',
-        'ELECTRICITY',
-        'OTHER',
-      ],
+      enum: CATEGORY_ENUM,
       required: true,
       index: true,
     },
@@ -30,16 +49,19 @@ const complaintSchema = new Schema(
       maxlength: 1000,
     },
 
+    /* =======================
+       ATTACHMENTS
+    ======================= */
     attachments: [
       {
-        url: String,
-        type: {
-          type: String,
-          enum: ['IMAGE', 'VIDEO', 'PDF'],
-        },
+        url: { type: String },
+        type: { type: String, enum: ATTACHMENT_TYPE },
       },
     ],
 
+    /* =======================
+       LOCATION
+    ======================= */
     location: {
       address: String,
       city: { type: String, index: true },
@@ -50,19 +72,18 @@ const complaintSchema = new Schema(
         lat: Number,
         lng: Number,
       },
-      autoDetected: { type: Boolean, default: false },
+      autoDetected: {
+        type: Boolean,
+        default: false,
+      },
     },
 
+    /* =======================
+       STATUS & ASSIGNMENT
+    ======================= */
     status: {
       type: String,
-      enum: [
-        'SUBMITTED',
-        'VERIFIED',
-        'ASSIGNED',
-        'IN_PROGRESS',
-        'RESOLVED',
-        'CLOSED',
-      ],
+      enum: STATUS_ENUM,
       default: 'SUBMITTED',
       index: true,
     },
@@ -80,12 +101,23 @@ const complaintSchema = new Schema(
       default: null,
     },
 
+    resolvedAt: {
+      type: Date,
+      default: null,
+    },
+
+    /* =======================
+       IDENTIFIER
+    ======================= */
     complaintId: {
       type: String,
       unique: true,
       index: true,
     },
 
+    /* =======================
+       COMMUNITY ENGAGEMENT
+    ======================= */
     upvotes: [
       {
         type: Schema.Types.ObjectId,
@@ -98,6 +130,9 @@ const complaintSchema = new Schema(
       default: 0,
     },
 
+    /* =======================
+       AI METADATA (OPTIONAL)
+    ======================= */
     aiCategory: String,
     aiConfidence: {
       type: Number,
@@ -105,24 +140,52 @@ const complaintSchema = new Schema(
       max: 1,
     },
 
+    /* =======================
+       AUDIT TIMELINE
+    ======================= */
     timeline: [
       {
-        status: String,
-        updatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
-        at: { type: Date, default: Date.now },
+        status: { type: String },
+        updatedBy: {
+          type: Schema.Types.ObjectId,
+          ref: 'User',
+        },
+        at: {
+          type: Date,
+          default: Date.now,
+        },
       },
     ],
   },
   { timestamps: true }
 );
 
+/* =======================
+   INDEXES FOR ANALYTICS
+======================= */
+complaintSchema.index({ status: 1, district: 1 });
+complaintSchema.index({ category: 1, status: 1 });
+
+/* =======================
+   PRE-SAVE HOOK
+======================= */
 complaintSchema.pre('save', function (next) {
+  // Generate human-readable complaint ID
   if (!this.complaintId) {
-    const city = (this.location?.city || 'GEN').slice(0, 3).toUpperCase();
+    const city = (this.location?.city || 'GEN')
+      .slice(0, 3)
+      .toUpperCase();
+
     this.complaintId = `CMP-${city}-${Date.now()}-${Math.floor(
       100 + Math.random() * 900
     )}`;
   }
+
+  // Keep upvoteCount consistent
+  if (this.isModified('upvotes')) {
+    this.upvoteCount = this.upvotes.length;
+  }
+
   next();
 });
 

@@ -1,8 +1,6 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
-import app from './app.js';
-import connectDB from './config/db.js';
+import "./config/env.js"; 
+import app from "./app.js";
+import connectDB from "./config/db.js";
 
 const PORT = process.env.PORT || 5000;
 
@@ -15,7 +13,7 @@ const startServer = async () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
   } catch (err) {
-    console.error('❌ Server startup failed', err);
+    console.error("❌ Server startup failed", err);
     process.exit(1);
   }
 };
