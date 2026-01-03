@@ -1,9 +1,22 @@
-import express from 'express';
-import { getMyRewards } from '../controllers/reward.controller.js';
-import { verifyJWT } from '../middlewares/auth.middleware.js';
+import { Router } from "express";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { checkRole } from "../middlewares/role.middleware.js";
+import {
+  getMyRewards,
+  getUserRewards,
+} from "../controllers/reward.controller.js";
 
-const router = express.Router();
+const router = Router();
 
-router.get('/me', verifyJWT, getMyRewards);
+// Citizen / Officer → own rewards
+router.get("/me", verifyJWT, getMyRewards);
+
+// Admin → rewards of any user
+router.get(
+  "/user/:userId",
+  verifyJWT,
+  checkRole("admin"),
+  getUserRewards
+);
 
 export default router;

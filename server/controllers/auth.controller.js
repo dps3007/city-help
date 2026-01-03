@@ -1,87 +1,114 @@
-import jwt from 'jsonwebtoken';
-import User from '../models/user.model.js';
-import asyncHandler from '../utils/asyncHandler.js';
+import jwt from "jsonwebtoken";
+import User from "../models/user.model.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import ApiError from "../utils/ApiError.js";
+import ApiResponse from "../utils/ApiResponse.js";
 
+/* =========================
+   REGISTER (CITIZEN ONLY)
+========================= */
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
-    res.status(400);
-    throw new Error('Name, email and password are required');
+    throw new ApiError(400, "Name, email and password are required");
   }
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    res.status(409);
-    throw new Error('User already exists');
+    throw new ApiError(409, "User already exists");
   }
 
   await User.create({
     name,
     email,
     password,
-    role: 'CITIZEN', // 🔒 force default role
+    role: "CITIZEN", // 🔒 forced
   });
 
-  res.status(201).json({ success: true });
+  return res.status(201).json(
+    new ApiResponse(201, null, "User registered successfully")
+  );
 });
 
-
+/* =========================
+   LOGIN
+========================= */
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email }).select('+password');
+  const user = await User.findOne({ email }).select("+password");
   if (!user || !(await user.isPasswordMatch(password))) {
-    res.status(401);
-    throw new Error('Invalid credentials');
+    throw new ApiError(401, "Invalid credentials");
   }
 
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
 
   user.refreshTokens.push(refreshToken);
-  await user.save();
+  await user.save({ validateBeforeSave: false });
 
-  res.json({ success: true, accessToken, refreshToken });
+  return res.status(200).json(
+    new ApiResponse(200, { accessToken, refreshToken }, "Login successful")
+  );
 });
 
+/* =========================
+   REFRESH TOKEN
+========================= */
 export const refreshToken = asyncHandler(async (req, res) => {
   const { refreshToken } = req.body;
+
   if (!refreshToken) {
-    res.status(401);
-    throw new Error('Refresh token required');
+    throw new ApiError(401, "Refresh token required");
   }
 
-  const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+  let decoded;
+  try {
+    decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+  } catch {
+    throw new ApiError(403, "Invalid or expired refresh token");
+  }
 
   const user = await User.findById(decoded._id);
   if (!user || !user.refreshTokens.includes(refreshToken)) {
-    res.status(403);
-    throw new Error('Invalid refresh token');
+    throw new ApiError(403, "Refresh token not recognized");
   }
 
   const newAccessToken = user.generateAccessToken();
-  res.json({ success: true, accessToken: newAccessToken });
+
+  return res.status(200).json(
+    new ApiResponse(200, { accessToken: newAccessToken }, "Token refreshed")
+  );
 });
 
+/* =========================
+   LOGOUT (SINGLE DEVICE)
+========================= */
 export const logout = asyncHandler(async (req, res) => {
   const { refreshToken } = req.body;
 
   if (!refreshToken) {
-    res.status(400);
-    throw new Error('Refresh token required');
+    throw new ApiError(400, "Refresh token required");
   }
 
   const user = await User.findOne({ refreshTokens: refreshToken });
   if (!user) {
-    return res.json({ success: true }); // token already invalid
+    return res.status(200).json(
+      new ApiResponse(200, null, "Logged out successfully")
+    );
   }
 
   user.refreshTokens = user.refreshTokens.filter(
-    t => t !== refreshToken
+    (t) => t !== refreshToken
   );
 
-  await user.save();
-  res.json({ success: true });
-});
+  await user.save({ validateBeforeSave: false });
 
+  return res.status(200).json(
+    new ApiResponse(200, null, "Logged out successfully")
+  );
+});

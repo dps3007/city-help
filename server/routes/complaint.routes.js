@@ -1,31 +1,61 @@
-import express from 'express';
+import { Router } from "express";
 import {
   createComplaint,
   getComplaints,
   getComplaintById,
-} from '../controllers/complaint.controller.js';
-import { verifyJWT } from '../middlewares/auth.middleware.js';
-import { checkRole } from '../middlewares/role.middleware.js';
-import { validate } from '../middlewares/validate.middleware.js';
-import { createComplaintSchema } from '../validators/complaint.validator.js';
+  verifyComplaint,
+  resolveComplaint,
+} from "../controllers/complaint.controller.js";
 
-const router = express.Router();
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { checkRole } from "../middlewares/role.middleware.js";
 
-// Citizen
+const router = Router();
+
+/* =========================
+   CITIZEN ROUTES
+========================= */
+
+// Create a complaint
 router.post(
-  '/',
+  "/",
   verifyJWT,
-  checkRole(['CITIZEN']),
-  validate(createComplaintSchema),
+  checkRole("CITIZEN"),
   createComplaint
 );
 
-router.get('/me', verifyJWT, checkRole(['CITIZEN']), getComplaints);
+// Get own complaints
+router.get(
+  "/",
+  verifyJWT,
+  getComplaints
+);
 
+// Get complaint by ID (role-based access handled in controller)
+router.get(
+  "/:id",
+  verifyJWT,
+  getComplaintById
+);
 
+/* =========================
+   OFFICER / ADMIN ROUTES
+========================= */
 
-// Shared
-router.get('/:complaintId', verifyJWT, getComplaintById);
+// Verify complaint
+router.patch(
+  "/:id/verify",
+  verifyJWT,
+  checkRole("OFFICER", "ADMIN"),
+  verifyComplaint
+);
 
+// Resolve complaint
+router.patch(
+  "/:id/resolve",
+  verifyJWT,
+  checkRole("OFFICER", "ADMIN"),
+  resolveComplaint
+);
 
 export default router;

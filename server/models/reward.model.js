@@ -1,36 +1,44 @@
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { Schema } from "mongoose";
 
 const rewardSchema = new Schema(
   {
+    // Who receives the reward
     userId: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
       index: true,
     },
 
+    // Reward points (non-monetary)
     points: {
       type: Number,
       required: true,
+      min: 1,
     },
 
+    // Why the reward was given
     reason: {
       type: String,
       enum: [
-        'COMPLAINT_CREATED',
-        'UPVOTE_RECEIVED',
-        'FEEDBACK_GIVEN',
-        'RESOLUTION_CONFIRMED',
+        "COMPLAINT_VERIFIED",   // complaint validated by officer/admin
+        "COMPLAINT_RESOLVED",   // complaint successfully resolved
+        "FEEDBACK_GIVEN",       // citizen submitted feedback
+        "UPVOTE_RECEIVED",      // optional: community validation
       ],
       required: true,
     },
 
+    // Related complaint (if applicable)
     complaintId: {
       type: Schema.Types.ObjectId,
-      ref: 'Complaint',
+      ref: "Complaint",
+      default: null,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-export default mongoose.model('Reward', rewardSchema);
+export default mongoose.model("Reward", rewardSchema);
