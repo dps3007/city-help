@@ -8,8 +8,13 @@ import {
 
 const router = Router();
 
+// get current user
 router.get("/me", verifyJWT, getCurrentUser);
+
+// update user
 router.patch("/me", verifyJWT, updateCurrentUser);
+
+// get complaints by user
 router.get("/my-complaints", verifyJWT, getMyComplaints);
 
 export default router;

@@ -12,6 +12,7 @@ import { manageUserSchema } from '../validators/admin.validators.js';
 
 const router = express.Router();
 
+// admin deshboard
 router.get(
   '/dashboard',
   verifyJWT,adminLimiter,
@@ -19,6 +20,7 @@ router.get(
   getDashboardStats
 );
 
+// get complaints
 router.get(
   '/complaints',
   verifyJWT,
@@ -26,6 +28,7 @@ router.get(
   getAdminComplaints
 );
 
+// manage users
 router.post(
   '/users/manage',
   verifyJWT,
@@ -35,10 +38,13 @@ router.post(
   manageUser
 );
 
+// get all users
 router.get("/users", verifyJWT, checkRole("admin"), getAllUsers);
 
+// block unblock users
 router.patch("/users/:id/status", verifyJWT, checkRole("admin"), updateUserStatus);
 
+// create authority
 router.post(
   "/users",
   verifyJWT,
