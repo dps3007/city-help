@@ -56,8 +56,6 @@ export const login = asyncHandler(async (req, res) => {
     })
   );
 });
-
-
  //  REFRESH TOKEN
 
 export const refreshToken = asyncHandler(async (req, res) => {

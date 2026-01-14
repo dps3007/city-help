@@ -1,8 +1,8 @@
-import Joi from 'joi';
+import Joi from "joi";
 
 export const createComplaintSchema = Joi.object({
   category: Joi.string()
-    .valid('GARBAGE', 'ROADS', 'WATER', 'STREETLIGHT', 'ELECTRICITY', 'OTHER')
+    .valid("GARBAGE", "ROADS", "WATER", "STREETLIGHT", "ELECTRICITY", "OTHER")
     .required(),
 
   description: Joi.string().min(10).max(1000).required(),
@@ -12,8 +12,8 @@ export const createComplaintSchema = Joi.object({
     district: Joi.string().required(),
     state: Joi.string().required(),
     coordinates: Joi.object({
-      lat: Joi.number().required(),
-      lng: Joi.number().required(),
-    }),
+      lat: Joi.number().min(-90).max(90).required(),
+      lng: Joi.number().min(-180).max(180).required(),
+    }).required(),
   }).required(),
-});
+}).unknown(false);

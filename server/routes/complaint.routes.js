@@ -1,48 +1,38 @@
 import { Router } from "express";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { checkRole } from "../middlewares/role.middleware.js";
+import { validate } from "../middlewares/validate.middleware.js";
+import { createComplaintSchema } from "../validators/complaint.validator.js";
+
 import {
   createComplaint,
   getComplaints,
   getComplaintById,
   verifyComplaint,
   resolveComplaint,
+  assignComplaint,
 } from "../controllers/complaint.controller.js";
-
-import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { checkRole } from "../middlewares/role.middleware.js";
 
 const router = Router();
 
-/* =========================
-   CITIZEN ROUTES
-========================= */
-
-// Create a complaint
 router.post(
   "/",
   verifyJWT,
   checkRole("CITIZEN"),
+  validate(createComplaintSchema),
   createComplaint
 );
 
-// Get own complaints
-router.get(
-  "/",
+router.get("/", verifyJWT, getComplaints);
+router.get("/:id", verifyJWT, getComplaintById);
+
+router.patch(
+  "/:id/assign",
   verifyJWT,
-  getComplaints
+  checkRole("ADMIN"),
+  assignComplaint
 );
 
-// Get complaint by ID (role-based access handled in controller)
-router.get(
-  "/:id",
-  verifyJWT,
-  getComplaintById
-);
-
-/* =========================
-   OFFICER / ADMIN ROUTES
-========================= */
-
-// Verify complaint
 router.patch(
   "/:id/verify",
   verifyJWT,
@@ -50,7 +40,6 @@ router.patch(
   verifyComplaint
 );
 
-// Resolve complaint
 router.patch(
   "/:id/resolve",
   verifyJWT,

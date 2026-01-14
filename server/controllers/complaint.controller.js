@@ -15,17 +15,10 @@ export const createComplaint = asyncHandler(async (req, res) => {
     req.user
   );
   
-  await sendNotification({
-    userId: officer._id,
-    title: "New Complaint Created",
-    message: "A new complaint has been created by you. we Rectify it as soon as possible.",
-    type: "COMPLAINT_CREATED",
-    email: citizen.email,
-    complaintId: complaint._id,
-  });
-  
   return res.status(201).json(
-    new ApiResponse(201, complaint, "Complaint created successfully")
+    new ApiResponse({ message: "Complaint created successfully",
+      data : {complaint}
+    })
   );
 });
 
@@ -60,6 +53,15 @@ export const assignComplaint = asyncHandler(async (req, res) => {
     message: "A new complaint has been assigned to you. Please take action.",
     type: "COMPLAINT_ASSIGNED",
     email: officer.email,
+    complaintId: complaint._id,
+  });
+
+  await sendNotification({
+    userId: officer._id,
+    title: "New Complaint Assigned",
+    message: "A new complaint has been assigned.",
+    type: "COMPLAINT_ASSIGNED",
+    email: citizen.email,
     complaintId: complaint._id,
   });
 
