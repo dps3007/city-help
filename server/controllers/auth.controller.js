@@ -4,9 +4,9 @@ import asyncHandler from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 
-/* =========================
-   REGISTER (CITIZEN ONLY)
-========================= */
+
+   //REGISTER (CITIZEN ONLY)
+
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -27,13 +27,11 @@ export const register = asyncHandler(async (req, res) => {
   });
 
   return res.status(201).json(
-    new ApiResponse(201, null, "User registered successfully")
+    new ApiResponse({message: "User registered successfully"})
   );
 });
 
-/* =========================
-   LOGIN
-========================= */
+  // LOGIN
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
@@ -47,15 +45,21 @@ export const login = asyncHandler(async (req, res) => {
 
   user.refreshTokens.push(refreshToken);
   await user.save({ validateBeforeSave: false });
-
+  
   return res.status(200).json(
-    new ApiResponse(200, { accessToken, refreshToken }, "Login successful")
+    new ApiResponse({
+      message: "Login successful",
+      data: { 
+        accessToken, 
+        refreshToken 
+      }, 
+    })
   );
 });
 
-/* =========================
-   REFRESH TOKEN
-========================= */
+
+ //  REFRESH TOKEN
+
 export const refreshToken = asyncHandler(async (req, res) => {
   const { refreshToken } = req.body;
 
@@ -81,13 +85,12 @@ export const refreshToken = asyncHandler(async (req, res) => {
   const newAccessToken = user.generateAccessToken();
 
   return res.status(200).json(
-    new ApiResponse(200, { accessToken: newAccessToken }, "Token refreshed")
+    new ApiResponse({ data : {accessToken: newAccessToken} }, "Token refreshed")
   );
 });
 
-/* =========================
-   LOGOUT (SINGLE DEVICE)
-========================= */
+  // LOGOUT (SINGLE DEVICE)
+
 export const logout = asyncHandler(async (req, res) => {
   const { refreshToken } = req.body;
 
@@ -96,19 +99,19 @@ export const logout = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findOne({ refreshTokens: refreshToken });
-  if (!user) {
-    return res.status(200).json(
-      new ApiResponse(200, null, "Logged out successfully")
+
+  
+  if (user) {
+    user.refreshTokens = user.refreshTokens.filter(
+      (t) => t !== refreshToken
     );
+
+    await user.save({ validateBeforeSave: false });
   }
 
-  user.refreshTokens = user.refreshTokens.filter(
-    (t) => t !== refreshToken
-  );
-
-  await user.save({ validateBeforeSave: false });
-
   return res.status(200).json(
-    new ApiResponse(200, null, "Logged out successfully")
+    new ApiResponse({
+      message: "Logged out successfully",
+    })
   );
 });
