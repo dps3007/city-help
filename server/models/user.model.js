@@ -36,6 +36,7 @@ const userSchema = new Schema(
       type: String,
       enum: [
         'CITIZEN',
+        'OFFICER',
         'DEPT_HEAD',
         'DISTRICT_ADMIN',
         'STATE_ADMIN',

@@ -146,9 +146,9 @@ export const updateUserStatus = asyncHandler(async (req, res) => {
 });
 
 export const createUser = asyncHandler(async (req, res) => {
-  const { username, email, role, department } = req.body;
+  const { name, email, role, department } = req.body;
 
-  if (!username || !email || !role) {
+  if (!name || !email || !role) {
     throw new ApiError(400, "Required fields missing");
   }
 
@@ -158,11 +158,14 @@ export const createUser = asyncHandler(async (req, res) => {
   }
 
   const tempPassword = "Welcome@123";
+  const assignedBy = req.user._id;
+  console.log("Assigned By:", assignedBy);
 
   const user = await User.create({
-    username,
+    name,
     email,
     role,
+    assignedBy: assignedBy,
     department,
     password: tempPassword,
     isActive: true
@@ -174,8 +177,15 @@ export const createUser = asyncHandler(async (req, res) => {
     subject: "You have been added to CityHelp",
     mailgenContent: {
       body: {
-        name: user.username,
+        name: user.name,
         intro: `You have been added as a ${role} in CityHelp.`,
+        table: {
+          data: [
+            { key: "Assigned By", value: req.user.name },
+            { key: "Department", value: department || "N/A" },
+            { key: "Role", value: role },
+          ],
+        },
         action: {
           instructions: "Use the following credentials to log in:",
           button: {
@@ -189,6 +199,6 @@ export const createUser = asyncHandler(async (req, res) => {
   });
 
   return res.status(201).json(
-    new ApiResponse(201, null, "User created and notified successfully")
+    new ApiResponse({ message: "User created and notified successfully" })
   );
 });

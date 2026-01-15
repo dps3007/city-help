@@ -5,10 +5,9 @@ import { addRewardPoints } from "./reward.controller.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { sendNotification } from "./notification.controller.js";
+import User from "../models/user.model.js";
 
-/* =========================
-CREATE COMPLAINT (CITIZEN)
-========================= */
+
 export const createComplaint = asyncHandler(async (req, res) => {
   const complaint = await ComplaintService.createComplaint(
     req.body,
@@ -22,57 +21,6 @@ export const createComplaint = asyncHandler(async (req, res) => {
   );
 });
 
-export const assignComplaint = asyncHandler(async (req, res) => {
-  const { officerId } = req.body;
-  const complaint = await Complaint.findById(req.params.id);
-
-  if (!complaint) {
-    throw new ApiError(404, "Complaint not found");
-  }
-
-  // Only Admin can assign (recommended)
-  if (req.user.role !== "ADMIN") {
-    throw new ApiError(403, "Only admin can assign complaints");
-  }
-
-  // Assign officer
-  complaint.assignedTo = officerId;
-  complaint.status = "Assigned";
-  await complaint.save();
-
-  // Fetch officer details
-  const officer = await User.findById(officerId);
-  if (!officer) {
-    throw new ApiError(404, "Officer not found");
-  }
-
-  // 🔔 NOTIFICATION GOES HERE
-  await sendNotification({
-    userId: officer._id,
-    title: "New Complaint Assigned",
-    message: "A new complaint has been assigned to you. Please take action.",
-    type: "COMPLAINT_ASSIGNED",
-    email: officer.email,
-    complaintId: complaint._id,
-  });
-
-  await sendNotification({
-    userId: officer._id,
-    title: "New Complaint Assigned",
-    message: "A new complaint has been assigned.",
-    type: "COMPLAINT_ASSIGNED",
-    email: citizen.email,
-    complaintId: complaint._id,
-  });
-
-  return res.status(200).json(
-    new ApiResponse(200, complaint, "Complaint assigned successfully")
-  );
-});
-
-/* =========================
-   GET COMPLAINTS (ROLE-BASED)
-========================= */
 export const getComplaints = asyncHandler(async (req, res) => {
   const user = req.user;
   let filter = {};
@@ -90,13 +38,13 @@ export const getComplaints = asyncHandler(async (req, res) => {
     .limit(50);
 
   return res.status(200).json(
-    new ApiResponse(200, complaints, "Complaints fetched successfully")
+    new ApiResponse({
+      message: "Complaints fetched successfully",
+      data: complaints,
+    })
   );
 });
 
-/* =========================
-   GET COMPLAINT BY ID
-========================= */
 export const getComplaintById = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const user = req.user;
@@ -121,120 +69,268 @@ export const getComplaintById = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Access denied");
   }
 
-  return res.status(200).json(
-    new ApiResponse(200, complaint, "Complaint fetched successfully")
+  return res.status(201).json(
+    new ApiResponse({ message: "Complaint fetched successfully",
+      data : {complaint}
+    })
   );
 });
 
-/* =========================
-   VERIFY COMPLAINT (OFFICER / ADMIN)
-========================= */
 export const verifyComplaint = asyncHandler(async (req, res) => {
   const user = req.user;
-
-  // 🔐 Role check
-  if (!["OFFICER", "ADMIN"].includes(user.role)) {
-    throw new ApiError(403, "Only officers or admins can verify complaints");
-  }
 
   const complaint = await Complaint.findById(req.params.id);
   if (!complaint) {
     throw new ApiError(404, "Complaint not found");
   }
 
-  // ❌ Prevent re-verification
-  if (complaint.status === "Verified") {
+  // ✅ CHANGED: correct enum
+  if (complaint.status === "VERIFIED") {
     throw new ApiError(400, "Complaint already verified");
   }
 
-  // ❌ Only pending complaints can be verified
-  if (complaint.status !== "Pending") {
+  // ✅ CHANGED: only SUBMITTED can be verified
+  if (complaint.status !== "SUBMITTED") {
     throw new ApiError(
       400,
       `Cannot verify complaint in '${complaint.status}' state`
     );
   }
 
-  complaint.status = "Verified";
+  complaint.status = "VERIFIED";         // ✅ CHANGED
   complaint.verifiedBy = user._id;
   complaint.verifiedAt = new Date();
-
   await complaint.save();
 
-  // ✅ REWARD: complaint verified
+  // ✅ CHANGED: fetch citizen properly
+  const citizen = await User.findById(complaint.citizen);
+  if (!citizen) {
+    throw new ApiError(404, "Citizen not found");
+  }
+
   await addRewardPoints({
-    userId: complaint.citizen, // correct owner
+    userId: citizen._id,
     points: 5,
     reason: "COMPLAINT_VERIFIED",
     complaintId: complaint._id,
   });
 
   await sendNotification({
-  userId: complaint.citizen,
-  title: "Complaint Verified",
-  message: "Your complaint has been verified by the authority.",
-  type: "COMPLAINT_VERIFIED",
-  email: citizen.email,
-  complaintId: complaint._id,
-});
-
+    userId: citizen._id,
+    name: citizen.name,
+    title: "Complaint Verified",
+    message: `Your complaint has been verified by ${user.name}.`,
+    type: "STATUS",                    
+    event: "COMPLAINT_VERIFIED",        
+    email: citizen.email,
+    complaintId: complaint._id,
+  });
 
   return res.status(200).json(
-    new ApiResponse(200, null, "Complaint verified successfully")
+    new ApiResponse({ message: "Complaint verified successfully" })
+  );
+});
+
+export const assignComplaint = asyncHandler(async (req, res) => {
+  const { officerId } = req.body;
+  const complaint = await Complaint.findById(req.params.id);
+
+  if (!complaint) {
+    throw new ApiError(404, "Complaint not found");
+  }
+
+  // ✅ CHANGED: prevent reassignment
+  if (complaint.status === "ASSIGNED") {
+    throw new ApiError(400, "Complaint already assigned");
+  }
+
+  const citizen = await User.findById(complaint.citizen);
+  if (!citizen) {
+    throw new ApiError(404, "Citizen not found");
+  }
+
+  const officer = await User.findById(officerId);
+  if (!officer) {
+    throw new ApiError(404, "Officer not found");
+  }
+
+  // ✅ CHANGED: status enum
+  complaint.assignedTo = officerId;
+  complaint.status = "ASSIGNED";
+  await complaint.save();
+
+  // 🔔 Officer notification
+  await sendNotification({
+    userId: officer._id,
+    name: officer.name,
+    title: "New Complaint Assigned",
+    message: "A new complaint has been assigned to you. Please take action.",
+    type: "ASSIGNMENT", 
+    event: "COMPLAINT_ASSIGNED",   
+    email: officer.email,
+    complaintId: complaint._id,
+  });
+
+  // 🔔 Citizen notification
+  await sendNotification({
+    userId: citizen._id,
+    name: citizen.name,
+    title: "Complaint Assigned",
+    message: `Your complaint has been assigned to ${officer.name}.`,
+    type: "ASSIGNMENT",        
+    event: "COMPLAINT_ASSIGNED",     
+    email: citizen.email,
+    complaintId: complaint._id,
+  });
+
+  return res.status(201).json(
+    new ApiResponse({
+      message: "Complaint assigned successfully",
+      data: { complaint },
+    })
+  );
+});
+
+export const startWork = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  if (user.role !== "OFFICER") {
+    throw new ApiError(403, "Only officers can start work on complaints");
+  }
+
+  const complaint = await Complaint.findById(req.params.id);
+
+  if (!complaint) {
+    throw new ApiError(404, "Complaint not found");
+  }
+
+  if (complaint.status !== "ASSIGNED") {
+    throw new ApiError(400, "Only assigned complaints can be started");
+  }
+
+  complaint.status = "IN_PROGRESS";
+  complaint.workStartedBy = user._id;
+  complaint.workStartedAt = new Date();
+  await complaint.save();
+
+  const citizen = await User.findById(complaint.citizen);
+  if (!citizen) {
+    throw new ApiError(404, "Citizen not found");
+  }
+
+  await sendNotification({
+    userId: citizen._id,
+    name: citizen.name,
+    title: "Work Started",
+    message: `Work has started on your complaint.`,
+    type: "STATUS",
+    event: "COMPLAINT_WORK_STARTED",
+    email: citizen.email,
+    complaintId: complaint._id,
+  });
+
+  return res.status(200).json(
+    new ApiResponse({ message: "Work started successfully", 
+      data : {complaint}
+    })
   );
 });
 
 export const resolveComplaint = asyncHandler(async (req, res) => {
   const user = req.user;
 
-  // 🔐 Role check
-  if (!["OFFICER", "ADMIN"].includes(user.role)) {
-    throw new ApiError(403, "Only officers or admins can resolve complaints");
-  }
-
   const complaint = await Complaint.findById(req.params.id);
   if (!complaint) {
     throw new ApiError(404, "Complaint not found");
   }
 
-  // ❌ Prevent invalid transitions
-  if (complaint.status === "Resolved") {
+  
+  if (complaint.status === "RESOLVED") {
     throw new ApiError(400, "Complaint already resolved");
   }
 
-  if (complaint.status !== "Verified") {
-    throw new ApiError(
-      400,
-      "Only verified complaints can be resolved"
-    );
+  if (complaint.status !== "IN_PROGRESS") {
+    throw new ApiError(400, "Only in-progress complaints can be resolved");
   }
 
-  // ✅ Resolve complaint
-  complaint.status = "Resolved";
+  complaint.status = "RESOLVED";        
   complaint.resolvedBy = user._id;
   complaint.resolvedAt = new Date();
-
   await complaint.save();
 
-  // 🏆 REWARD: complaint resolved
+  const citizen = await User.findById(complaint.citizen); 
+  if (!citizen) {
+    throw new ApiError(404, "Citizen not found");
+  }
+
   await addRewardPoints({
-    userId: complaint.citizen,
+    userId: citizen._id,
     points: 10,
     reason: "COMPLAINT_RESOLVED",
     complaintId: complaint._id,
   });
 
   await sendNotification({
-  userId: complaint.citizen,
-  title: "Complaint Resolved",
-  message: "Your complaint has been successfully resolved.",
-  type: "COMPLAINT_RESOLVED",
-  email: citizen.email,
-  complaintId: complaint._id,
-});
-
+    userId: citizen._id,
+    name: citizen.name,
+    title: "Complaint Resolved",
+    message: "Your complaint has been successfully resolved.",
+    type: "STATUS",       
+    event: "COMPLAINT_RESOLVED",   
+    email: citizen.email,
+    complaintId: complaint._id,
+  });
 
   return res.status(200).json(
-    new ApiResponse(200, null, "Complaint resolved successfully")
+    new ApiResponse({ message: "Complaint resolved successfully",
+      data : {complaint},
+     })
   );
 });
+
+export const closeComplaint = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  const complaint = await Complaint.findById(req.params.id);
+  if (!complaint) {
+    throw new ApiError(404, "Complaint not found");
+  }
+
+  if (complaint.status !== "RESOLVED") {
+    throw new ApiError(
+      400,
+      `Only resolved complaints can be closed (current: ${complaint.status})`
+    );
+  }
+
+  complaint.status = "CLOSED";
+  complaint.closedBy = user._id;       
+  complaint.closedAt = new Date();   
+  await complaint.save();
+
+  const citizen = await User.findById(complaint.citizen);
+  if (!citizen) {
+    throw new ApiError(404, "Citizen not found");
+  }
+
+  // 🔔 Notification to citizen
+  await sendNotification({
+    userId: citizen._id,
+    name: citizen.name,
+    title: "Complaint Closed",
+    message: "Your complaint has been successfully closed.",
+    type: "STATUS",
+    event: "COMPLAINT_CLOSED",         
+    email: citizen.email,
+    complaintId: complaint._id,
+  });
+
+  return res.status(200).json(
+    new ApiResponse({
+      message: "Complaint closed successfully",
+      data: { complaint },
+    })
+  );
+});
+
+

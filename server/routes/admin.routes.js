@@ -39,16 +39,16 @@ router.post(
 );
 
 // get all users
-router.get("/users", verifyJWT, checkRole("admin"), getAllUsers);
+router.get("/users", verifyJWT, checkRole("DISTRICT_ADMIN"), getAllUsers);
 
 // block unblock users
-router.patch("/users/:id/status", verifyJWT, checkRole("admin"), updateUserStatus);
+router.patch("/users/:id/status", verifyJWT, checkRole("DISTRICT_ADMIN"), updateUserStatus);
 
 // create authority
 router.post(
   "/users",
   verifyJWT,
-  checkRole("admin"),
+  checkRole("DEPT_HEAD"),
   createUser
 );
 

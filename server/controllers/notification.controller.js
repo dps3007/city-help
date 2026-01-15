@@ -10,12 +10,15 @@ export const sendNotification = async ({
   message,
   type,
   email,
+  event,
+  name,
   complaintId = null,
 }) => {
   // Save in DB
   await Notification.create({
     userId,
     title,
+    event,
     message,
     type,
     relatedComplaint: complaintId,
@@ -28,7 +31,7 @@ export const sendNotification = async ({
       subject: title,
       mailgenContent: {
         body: {
-          name: "CityHelp User",
+          name: name || "CityHelp User",
           intro: message,
         },
       },
@@ -38,16 +41,15 @@ export const sendNotification = async ({
 
 
 export const getMyNotifications = asyncHandler(async (req, res) => {
-  const notifications = await Notification.find({
+  const notification = await Notification.find({
     userId: req.user._id,
   }).sort({ createdAt: -1 });
 
   return res.status(200).json(
-    new ApiResponse(
-      200,
-      notifications,
-      "Notifications fetched successfully"
-    )
+    new ApiResponse({
+      message: "Notifications fetched successfully",
+      data: notification,
+    })
   );
 });
 
@@ -60,10 +62,9 @@ export const markAsRead = asyncHandler(async (req, res) => {
   );
 
   return res.status(200).json(
-    new ApiResponse(
-      200,
-      notification,
-      "Notification marked as read"
-    )
+    new ApiResponse({
+      message: "Notification marked as read",
+      data: notification,
+})
   );
 });
