@@ -9,22 +9,24 @@ export const sendNotification = async ({
   title,
   message,
   type,
-  email,
   event,
+  email,
   name,
   complaintId = null,
 }) => {
-  // Save in DB
+  if (!type || !event) {
+    throw new Error("Notification type and event are required");
+  }
+
   await Notification.create({
     userId,
     title,
-    event,
     message,
     type,
-    relatedComplaint: complaintId,
+    event,
+    relatedComplaint: complaintId, // ✅ must match schema
   });
 
-  // Send email
   if (email) {
     await sendEmail({
       email,
@@ -39,20 +41,18 @@ export const sendNotification = async ({
   }
 };
 
-
 export const getMyNotifications = asyncHandler(async (req, res) => {
-  const notification = await Notification.find({
+  const notifications = await Notification.find({
     userId: req.user._id,
   }).sort({ createdAt: -1 });
 
   return res.status(200).json(
     new ApiResponse({
       message: "Notifications fetched successfully",
-      data: notification,
+      data: { notifications },
     })
   );
 });
-
 
 export const markAsRead = asyncHandler(async (req, res) => {
   const notification = await Notification.findOneAndUpdate(
@@ -61,10 +61,63 @@ export const markAsRead = asyncHandler(async (req, res) => {
     { new: true }
   );
 
+  if (!notification) {
+    throw new ApiError(404, "Notification not found");
+  }
+
   return res.status(200).json(
     new ApiResponse({
       message: "Notification marked as read",
-      data: notification,
-})
+      data: { notification },
+    })
   );
 });
+
+export const markAllAsRead = asyncHandler(async (req, res) => {
+  const result = await Notification.updateMany(
+    { userId: req.user._id, isRead: false },
+    { isRead: true }
+  );
+
+  return res.status(200).json(
+    new ApiResponse({
+      message: "All notifications marked as read",
+      data: {
+        updatedCount: result.modifiedCount,
+      },
+    })
+  );
+});
+
+
+export const getUnreadCount = asyncHandler(async (req, res) => {
+  const count = await Notification.countDocuments({
+    userId: req.user._id,
+    isRead: false,
+  });
+
+  return res.status(200).json(
+    new ApiResponse({
+      message: "Unread count fetched successfully",
+      data: { count },
+    })
+  );
+});
+
+export const deleteNotification = asyncHandler(async (req, res) => {
+  const notification = await Notification.findOneAndDelete({
+    _id: req.params.id,
+    userId: req.user._id,
+  });
+
+  if (!notification) {
+    throw new ApiError(404, "Notification not found");
+  }
+
+  return res.status(200).json(
+    new ApiResponse({
+      message: "Notification deleted successfully",
+    })
+  );
+});
+

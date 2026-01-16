@@ -3,26 +3,41 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
 import {
   getMyNotifications,
   markAsRead,
+  deleteNotification,
+  getUnreadCount,
+  markAllAsRead
 } from "../controllers/notification.controller.js";
 
 const router = Router();
 
-/* =========================
-   USER NOTIFICATION ROUTES
-========================= */
-
-// Get all notifications of logged-in user
 router.get(
   "/me",
   verifyJWT,
   getMyNotifications
 );
 
-// Mark a notification as read
 router.patch(
   "/:id/read",
   verifyJWT,
   markAsRead
+);
+
+router.patch(
+  "/read-all",
+  verifyJWT,
+  markAllAsRead
+);
+
+router.get(
+  "/unread-count",
+  verifyJWT,
+  getUnreadCount
+);
+
+router.delete(
+  "/:id",
+  verifyJWT,
+  deleteNotification
 );
 
 export default router;
