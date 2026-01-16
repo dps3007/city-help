@@ -3,7 +3,8 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
 import {
   getCurrentUser,
   updateCurrentUser,
-  getMyComplaints
+  getMyAllComplaints,
+  getMyComplaintById
 } from "../controllers/user.controller.js";
 
 const router = Router();
@@ -15,6 +16,8 @@ router.get("/me", verifyJWT, getCurrentUser);
 router.patch("/me", verifyJWT, updateCurrentUser);
 
 // get complaints by user
-router.get("/my-complaints", verifyJWT, getMyComplaints);
+router.get("/my-complaints", verifyJWT, getMyAllComplaints);
+
+router.get("/my-complaints/:id", verifyJWT, getMyComplaintById);
 
 export default router;
