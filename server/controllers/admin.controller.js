@@ -4,71 +4,102 @@ import Complaint from '../models/complaint.model.js';
 import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiError.js";
 import { sendEmail } from "../utils/mail.js";
+import { ROLE_LEVEL } from '../middlewares/role.middleware.js';
 
-/* ================= DASHBOARD STATS ================= */
+// DASHBOARD STATS 
 export const getDashboardStats = asyncHandler(async (req, res) => {
-  const [totalUsers, totalComplaints, resolvedComplaints] =
-    await Promise.all([
-      User.countDocuments(),
-      Complaint.countDocuments(),
-      Complaint.countDocuments({ status: 'RESOLVED' }),
-    ]);
+  const [
+    totalUsers,
+    totalComplaints,
+    submittedComplaints,
+    resolvedComplaints,
+    closedComplaints,
+  ] = await Promise.all([
+    User.countDocuments(),
+    Complaint.countDocuments(),
+    Complaint.countDocuments({ status: "SUBMITTED" }),
+    Complaint.countDocuments({ status: "RESOLVED" }),
+    Complaint.countDocuments({ status: "CLOSED" }),
+  ]);
 
-  res.status(200).json({
+  // ✅ CHANGED: correct pending logic
+  const pendingComplaints =
+    totalComplaints - resolvedComplaints - closedComplaints;
+
+  return res.status(200).json({
     success: true,
     stats: {
       totalUsers,
       totalComplaints,
+      complaintSubmitted: submittedComplaints,
       resolvedComplaints,
-      pendingComplaints: totalComplaints - resolvedComplaints,
+      closedComplaints,
+      pendingComplaints,
     },
   });
 });
 
-/* ================= USER MANAGEMENT ================= */
+// USER MANAGEMENT
 export const manageUser = asyncHandler(async (req, res) => {
-  const { userId, action } = req.body;
+  const { userId, role: newRole } = req.body;
 
-  if (!userId || !action) {
-    res.status(400);
-    throw new Error('userId and action are required');
+  // ✅ Basic validation
+  if (!userId || !newRole) {
+    throw new ApiError(400, "userId and role are required");
   }
 
-  const allowedActions = ['BLOCK', 'UNBLOCK', 'DELETE'];
-
-  if (!allowedActions.includes(action)) {
-    res.status(400);
-    throw new Error('Invalid action');
+  // ✅ Role validation
+  if (!ROLE_LEVEL[newRole]) {
+    throw new ApiError(400, "Invalid role");
   }
 
-  const user = await User.findById(userId);
-  if (!user) {
-    res.status(404);
-    throw new Error('User not found');
+  const targetUser = await User.findById(userId);
+  if (!targetUser) {
+    throw new ApiError(404, "User not found");
   }
 
-  if (action === 'BLOCK') {
-    user.isActive = false;
-    await user.save();
+  // ❌ Self role change not allowed
+  if (targetUser._id.equals(req.user._id)) {
+    throw new ApiError(400, "You cannot change your own role");
   }
 
-  if (action === 'UNBLOCK') {
-    user.isActive = true;
-    await user.save();
+  const currentUserLevel = ROLE_LEVEL[req.user.role];
+  const targetUserCurrentLevel = ROLE_LEVEL[targetUser.role];
+  const newRoleLevel = ROLE_LEVEL[newRole];
+
+  // ❌ Cannot modify equal or higher role user
+  if (targetUserCurrentLevel >= currentUserLevel) {
+    throw new ApiError(
+      403,
+      "You cannot modify a user with equal or higher role"
+    );
   }
 
-  if (action === 'DELETE') {
-    await user.deleteOne();
+  // ❌ Cannot assign equal or higher role than yourself
+  if (newRoleLevel >= currentUserLevel) {
+    throw new ApiError(
+      403,
+      "You cannot assign a role equal to or higher than your own"
+    );
   }
 
-  res.status(200).json({
-    success: true,
-    message: `User ${action} successfully`,
-    userId,
-  });
+  // ✅ SAFE UPDATE
+  const oldRole = targetUser.role;
+  targetUser.role = newRole;
+  await targetUser.save();
+
+  return res.status(200).json(
+    new ApiResponse({
+      data: {
+      userId: targetUser._id,
+      oldRole,
+      newRole,
+    },
+      message: "User role updated successfully"
+    })
+  );
+
 });
-
-
 export const getAdminComplaints = asyncHandler(async (req, res) => {
   const {
     page = 1,
@@ -115,33 +146,7 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   const users = await User.find().select("-password");
 
   return res.status(200).json(
-    new ApiResponse(200, { users }, "All users fetched successfully")
-  );
-});
-
-export const updateUserStatus = asyncHandler(async (req, res) => {
-  const { isActive } = req.body;
-
-  if (typeof isActive !== "boolean") {
-    throw new ApiError(400, "isActive must be boolean");
-  }
-
-  const user = await User.findByIdAndUpdate(
-    req.params.id,
-    { isActive },
-    { new: true }
-  ).select("-password");
-
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
-
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      { user },
-      `User ${isActive ? "unblocked" : "blocked"} successfully`
-    )
+    new ApiResponse({data: { users }, message: "All users fetched successfully"})
   );
 });
 
@@ -202,3 +207,5 @@ export const createUser = asyncHandler(async (req, res) => {
     new ApiResponse({ message: "User created and notified successfully" })
   );
 });
+
+

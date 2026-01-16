@@ -1,6 +1,9 @@
 import express from 'express';
-import { getDashboardStats, manageUser,getAllUsers,
-  updateUserStatus, createUser
+import { 
+  getDashboardStats, 
+  manageUser, 
+  getAllUsers,
+  createUser
  } from '../controllers/admin.controller.js';
 import { verifyJWT } from '../middlewares/auth.middleware.js';
 import { checkRole } from '../middlewares/role.middleware.js';
@@ -40,9 +43,6 @@ router.post(
 
 // get all users
 router.get("/users", verifyJWT, checkRole("DISTRICT_ADMIN"), getAllUsers);
-
-// block unblock users
-router.patch("/users/:id/status", verifyJWT, checkRole("DISTRICT_ADMIN"), updateUserStatus);
 
 // create authority
 router.post(

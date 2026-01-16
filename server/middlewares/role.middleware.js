@@ -1,11 +1,12 @@
-const ROLE_LEVEL = {
+export const ROLE_LEVEL = {
   CITIZEN: 1,
-  OFFICER: 2,
-  DEPT_HEAD: 3,
-  DISTRICT_ADMIN: 4,
-  STATE_ADMIN: 5,
-  CENTRAL_ADMIN: 6,
-  SUPER_ADMIN: 7,
+  WORKER: 2,
+  OFFICER: 3,
+  DEPT_HEAD: 4,
+  DISTRICT_ADMIN: 5,
+  STATE_ADMIN: 6,
+  CENTRAL_ADMIN: 7,
+  SUPER_ADMIN: 8,
 };
 
 export const checkRole = (...allowedRoles) => {
