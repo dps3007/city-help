@@ -15,7 +15,7 @@ router.get("/me", verifyJWT, getMyRewards);
 router.get(
   "/user/:userId",
   verifyJWT,
-  checkRole("admin"),
+  checkRole("DEPT_HEAD"),
   getUserRewards
 );
 

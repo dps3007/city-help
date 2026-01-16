@@ -41,4 +41,10 @@ const rewardSchema = new Schema(
   }
 );
 
+rewardSchema.index(
+  { userId: 1, reason: 1, complaintId: 1 },
+  { unique: true }
+);
+
+
 export default mongoose.model("Reward", rewardSchema);
