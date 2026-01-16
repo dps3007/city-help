@@ -39,7 +39,7 @@ router.patch(
 router.patch(
   "/:id/verify",
   verifyJWT,
-  checkRole("OFFICER"),
+  checkRole("DEPT_HEAD"),
   verifyComplaint
 );
 

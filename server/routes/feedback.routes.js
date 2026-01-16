@@ -10,10 +10,11 @@ import {
 const router = Router();
 
 // Citizen
-router.post("/", verifyJWT, checkRole("citizen"), createFeedback);
+router.post("/", verifyJWT, checkRole("CITIZEN"), createFeedback);
 
 // Admin
-router.get("/", verifyJWT, checkRole("admin"), getAllFeedbacks);
-router.get("/:complaintId", verifyJWT, checkRole("admin"), getFeedbackByComplaint);
+router.get("/", verifyJWT, checkRole("DEPT_HEAD"), getAllFeedbacks);
+
+router.get("/:complaintId", verifyJWT, checkRole("DEPT_HEAD"), getFeedbackByComplaint);
 
 export default router;
