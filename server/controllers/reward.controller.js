@@ -3,7 +3,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
-
+// Get rewards for the logged-in user
 export const getMyRewards = asyncHandler(async (req, res) => {
   const rewards = await Reward.find({
     userId: req.user._id,
@@ -22,6 +22,7 @@ export const getMyRewards = asyncHandler(async (req, res) => {
   );
 });
 
+// Get rewards for a specific user (admin only)
 export const getUserRewards = asyncHandler(async (req, res) => {
   const rewards = await Reward.find({
     userId: req.params.userId,
@@ -44,6 +45,7 @@ export const getUserRewards = asyncHandler(async (req, res) => {
   );
 });
 
+// Function to add reward points
 export const addRewardPoints = async ({
   userId,
   points,

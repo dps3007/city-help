@@ -4,13 +4,14 @@ import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
-
+// Get current logged-in user details
 export const getCurrentUser = asyncHandler(async (req, res) => {
   return res.status(200).json(
     new ApiResponse({ data: { user: req.user }, message: "Current user fetched successfully" })
   );
 });
 
+// Update current logged-in user profile
 export const updateCurrentUser = asyncHandler(async (req, res) => {
   const { name, email } = req.body;
 
@@ -63,6 +64,7 @@ export const updateCurrentUser = asyncHandler(async (req, res) => {
   );
 });
 
+// Get all complaints of the logged-in user
 export const getMyAllComplaints = asyncHandler(async (req, res) => {
   const complaints = await Complaint.find({
     citizen: req.user._id,
@@ -76,6 +78,7 @@ export const getMyAllComplaints = asyncHandler(async (req, res) => {
   );
 });
 
+// Get a specific complaint of the logged-in user by ID
 export const getMyComplaintById = asyncHandler(async (req, res) => {
   const { id } = req.params;  
 

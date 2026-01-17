@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 
+// Feedback Schema
 const feedbackSchema = new mongoose.Schema(
   {
     complaint: {

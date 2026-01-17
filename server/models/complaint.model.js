@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 
+// Enums
 const STATUS_ENUM = [
   'SUBMITTED',
   'VERIFIED',
@@ -9,6 +10,7 @@ const STATUS_ENUM = [
   'CLOSED',
 ];
 
+// Category options
 const CATEGORY_ENUM = [
   'GARBAGE',
   'ROADS',
@@ -18,13 +20,12 @@ const CATEGORY_ENUM = [
   'OTHER',
 ];
 
+// Attachment types
 const ATTACHMENT_TYPE = ['IMAGE', 'VIDEO', 'PDF'];
 
+// Complaint Schema
 const complaintSchema = new Schema(
   {
-    /* =======================
-       OWNERSHIP
-    ======================= */
     citizen: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -32,9 +33,6 @@ const complaintSchema = new Schema(
       index: true,
     },
 
-    /* =======================
-       CORE DETAILS
-    ======================= */
     category: {
       type: String,
       enum: CATEGORY_ENUM,
@@ -49,9 +47,6 @@ const complaintSchema = new Schema(
       maxlength: 1000,
     },
 
-    /* =======================
-       ATTACHMENTS
-    ======================= */
     attachments: [
       {
         url: { type: String },
@@ -59,9 +54,6 @@ const complaintSchema = new Schema(
       },
     ],
 
-    /* =======================
-       LOCATION
-    ======================= */
     location: {
       address: String,
       city: { type: String, index: true },
@@ -78,9 +70,6 @@ const complaintSchema = new Schema(
       },
     },
 
-    /* =======================
-       STATUS & ASSIGNMENT
-    ======================= */
     status: {
       type: String,
       enum: STATUS_ENUM,
@@ -106,18 +95,12 @@ const complaintSchema = new Schema(
       default: null,
     },
 
-    /* =======================
-       IDENTIFIER
-    ======================= */
     complaintId: {
       type: String,
       unique: true,
       index: true,
     },
 
-    /* =======================
-       COMMUNITY ENGAGEMENT
-    ======================= */
     upvotes: [
       {
         type: Schema.Types.ObjectId,
@@ -130,9 +113,6 @@ const complaintSchema = new Schema(
       default: 0,
     },
 
-    /* =======================
-       AI METADATA (OPTIONAL)
-    ======================= */
     aiCategory: String,
     aiConfidence: {
       type: Number,
@@ -140,9 +120,6 @@ const complaintSchema = new Schema(
       max: 1,
     },
 
-    /* =======================
-       AUDIT TIMELINE
-    ======================= */
     timeline: [
       {
         status: { type: String },
@@ -160,15 +137,11 @@ const complaintSchema = new Schema(
   { timestamps: true }
 );
 
-/* =======================
-   INDEXES FOR ANALYTICS
-======================= */
+// Indexes for efficient querying
 complaintSchema.index({ status: 1, district: 1 });
 complaintSchema.index({ category: 1, status: 1 });
 
-/* =======================
-   PRE-SAVE HOOK
-======================= */
+// Pre-save hook to generate complaintId and maintain upvoteCount
 complaintSchema.pre('save', function (next) {
   // Generate human-readable complaint ID
   if (!this.complaintId) {

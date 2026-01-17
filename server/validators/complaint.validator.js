@@ -1,5 +1,6 @@
 import Joi from "joi";
 
+// Validation schema for creating a complaint
 export const createComplaintSchema = Joi.object({
   category: Joi.string()
     .valid("GARBAGE", "ROADS", "WATER", "STREETLIGHT", "ELECTRICITY", "OTHER")

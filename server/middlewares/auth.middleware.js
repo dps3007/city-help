@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/user.model.js';
 
+// Middleware to verify JWT and attach user to request
 export const verifyJWT = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 

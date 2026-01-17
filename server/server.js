@@ -2,9 +2,9 @@ import "./config/env.js";
 import app from "./app.js";
 import connectDB from "./config/db.js";
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8000;
 
-/* ---------- START SERVER ---------- */
+// Start the server after connecting to the database
 const startServer = async () => {
   try {
     await connectDB();
@@ -18,4 +18,5 @@ const startServer = async () => {
   }
 };
 
+// Invoke the server start function
 startServer();

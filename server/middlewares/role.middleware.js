@@ -9,6 +9,7 @@ export const ROLE_LEVEL = {
   SUPER_ADMIN: 8,
 };
 
+// Middleware to check if user has one of the allowed roles
 export const checkRole = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) {

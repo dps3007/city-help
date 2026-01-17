@@ -1,5 +1,6 @@
 import rateLimit from 'express-rate-limit';
 
+// Rate Limiter for Authentication Routes
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: process.env.NODE_ENV === "production" ? 5 : 50, // 🔒 login/register attempts

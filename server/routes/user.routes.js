@@ -18,6 +18,7 @@ router.patch("/me", verifyJWT, updateCurrentUser);
 // get complaints by user
 router.get("/my-complaints", verifyJWT, getMyAllComplaints);
 
+// get complaint by id for user
 router.get("/my-complaints/:id", verifyJWT, getMyComplaintById);
 
 export default router;

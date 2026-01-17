@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 
+// Reward Schema
 const rewardSchema = new Schema(
   {
     // Who receives the reward
@@ -41,10 +42,10 @@ const rewardSchema = new Schema(
   }
 );
 
+// Unique index to prevent duplicate rewards for same reason on same complaint
 rewardSchema.index(
   { userId: 1, reason: 1, complaintId: 1 },
   { unique: true }
 );
-
 
 export default mongoose.model("Reward", rewardSchema);

@@ -1,8 +1,9 @@
 import mongoose, { Schema } from "mongoose";
 
+// Notification Schema
 const notificationSchema = new Schema(
   {
-    // 🔹 Who receives the notification
+    // Who receives the notification
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -10,7 +11,7 @@ const notificationSchema = new Schema(
       index: true,
     },
 
-    // 🔹 Display content
+    // Display content
     title: {
       type: String,
       required: true,
@@ -23,14 +24,14 @@ const notificationSchema = new Schema(
       trim: true,
     },
 
-    // 🔹 Generic category (for UI, filters, icons)
+    //  Category of notification
     type: {
       type: String,
       enum: ["STATUS", "ASSIGNMENT", "REMINDER", "SYSTEM"],
       required: true,
     },
 
-    // 🔹 Specific action (for logic, analytics, audits)
+    // Specific event triggering the notification
     event: {
       type: String,
       enum: [
@@ -44,14 +45,14 @@ const notificationSchema = new Schema(
       required: true,
     },
 
-    // 🔹 Optional reference
+    // Optional related complaint
     relatedComplaint: {
       type: Schema.Types.ObjectId,
       ref: "Complaint",
       default: null,
     },
 
-    // 🔹 Read status
+    // Read status
     isRead: {
       type: Boolean,
       default: false,

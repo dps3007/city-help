@@ -17,6 +17,7 @@ import {
 
 const router = Router();
 
+// Citizen → create complaint
 router.post(
   "/",
   verifyJWT,
@@ -25,10 +26,13 @@ router.post(
   createComplaint
 );
 
+// Citizen / Officer → get own complaints
 router.get("/", verifyJWT, getComplaints);
 
+// Get complaint by ID with access control
 router.get("/:id", verifyJWT, getComplaintById);
 
+// Dept Head → assign complaint
 router.patch(
   "/:id/assign",
   verifyJWT,
@@ -36,6 +40,7 @@ router.patch(
   assignComplaint
 );
 
+// Dept Head → verify complaint
 router.patch(
   "/:id/verify",
   verifyJWT,
@@ -43,6 +48,7 @@ router.patch(
   verifyComplaint
 );
 
+// Officer → start work on complaint
 router.patch(
   "/:id/start-work",
   verifyJWT,
@@ -50,6 +56,7 @@ router.patch(
   startWork
 );
 
+// Officer → resolve complaint
 router.patch(
   "/:id/resolve",
   verifyJWT,
@@ -57,6 +64,7 @@ router.patch(
   resolveComplaint
 );
 
+// Dept Head → close complaint
 router.patch(
   "/:id/close",
   verifyJWT,

@@ -7,7 +7,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { sendNotification } from "./notification.controller.js";
 import User from "../models/user.model.js";
 
-
+// Create a new complaint
 export const createComplaint = asyncHandler(async (req, res) => {
   const complaint = await ComplaintService.createComplaint(
     req.body,
@@ -21,6 +21,7 @@ export const createComplaint = asyncHandler(async (req, res) => {
   );
 });
 
+// Get complaints for current user (citizen or officer)
 export const getComplaints = asyncHandler(async (req, res) => {
   const user = req.user;
   let filter = {};
@@ -45,6 +46,7 @@ export const getComplaints = asyncHandler(async (req, res) => {
   );
 });
 
+// Get complaint by ID with access control
 export const getComplaintById = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const user = req.user;
@@ -76,6 +78,7 @@ export const getComplaintById = asyncHandler(async (req, res) => {
   );
 });
 
+// Verify a complaint
 export const verifyComplaint = asyncHandler(async (req, res) => {
   const user = req.user;
 
@@ -131,6 +134,7 @@ export const verifyComplaint = asyncHandler(async (req, res) => {
   );
 });
 
+// Assign a complaint to an officer
 export const assignComplaint = asyncHandler(async (req, res) => {
   const { officerId } = req.body;
   const complaint = await Complaint.findById(req.params.id);
@@ -191,6 +195,7 @@ export const assignComplaint = asyncHandler(async (req, res) => {
   );
 });
 
+// Start work on a complaint
 export const startWork = asyncHandler(async (req, res) => {
   const user = req.user;
 
@@ -236,6 +241,7 @@ export const startWork = asyncHandler(async (req, res) => {
   );
 });
 
+// Resolve a complaint
 export const resolveComplaint = asyncHandler(async (req, res) => {
   const user = req.user;
 
@@ -288,6 +294,7 @@ export const resolveComplaint = asyncHandler(async (req, res) => {
   );
 });
 
+// Close a complaint
 export const closeComplaint = asyncHandler(async (req, res) => {
   const user = req.user;
 
@@ -332,5 +339,6 @@ export const closeComplaint = asyncHandler(async (req, res) => {
     })
   );
 });
+
 
 

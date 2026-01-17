@@ -5,8 +5,7 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 
 
-   //REGISTER (CITIZEN ONLY)
-
+//REGISTER (CITIZEN ONLY)
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -31,7 +30,7 @@ export const register = asyncHandler(async (req, res) => {
   );
 });
 
-  // LOGIN
+// LOGIN
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
@@ -56,8 +55,8 @@ export const login = asyncHandler(async (req, res) => {
     })
   );
 });
- //  REFRESH TOKEN
 
+//  REFRESH TOKEN
 export const refreshToken = asyncHandler(async (req, res) => {
   const { refreshToken } = req.body;
 
@@ -87,8 +86,7 @@ export const refreshToken = asyncHandler(async (req, res) => {
   );
 });
 
-  // LOGOUT (SINGLE DEVICE)
-
+// LOGOUT (SINGLE DEVICE)
 export const logout = asyncHandler(async (req, res) => {
   const { refreshToken } = req.body;
 
@@ -113,3 +111,5 @@ export const logout = asyncHandler(async (req, res) => {
     })
   );
 });
+
+

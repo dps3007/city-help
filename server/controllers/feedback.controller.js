@@ -6,6 +6,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { addRewardPoints } from "./reward.controller.js";
 import Reward from "../models/reward.model.js";
 
+// Create feedback for a complaint
 export const createFeedback = asyncHandler(async (req, res) => {
   const { complaintId, rating, comment } = req.body;
 
@@ -69,6 +70,7 @@ export const createFeedback = asyncHandler(async (req, res) => {
   );
 });
 
+// Get feedback by complaint ID
 export const getFeedbackByComplaint = asyncHandler(async (req, res) => {
   const feedback = await Feedback.findOne({
     complaint: req.params.complaintId
@@ -83,7 +85,7 @@ export const getFeedbackByComplaint = asyncHandler(async (req, res) => {
   );
 });
 
-
+// Get all feedbacks (admin only)
 export const getAllFeedbacks = asyncHandler(async (req, res) => {
   const feedbacks = await Feedback.find()
     .populate("user", "username")
@@ -93,3 +95,4 @@ export const getAllFeedbacks = asyncHandler(async (req, res) => {
     new ApiResponse({ data: { feedbacks } , message:  "All feedback fetched successfully"})
   );
 });
+

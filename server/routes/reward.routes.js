@@ -9,7 +9,11 @@ import {
 const router = Router();
 
 // Citizen / Officer → own rewards
-router.get("/me", verifyJWT, getMyRewards);
+router.get(
+  "/me", 
+  verifyJWT, 
+  getMyRewards
+);
 
 // Admin → rewards of any user
 router.get(

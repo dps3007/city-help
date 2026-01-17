@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
+// User Schema
 const userSchema = new Schema(
   {
     avatar: {
@@ -88,16 +89,19 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
+// Pre-save hook to hash password if modified
 userSchema.pre('save', async function () {
   if (this.isModified('password')) {
     this.password = await bcrypt.hash(this.password, 10);
   }
 });
 
+// Instance methods
 userSchema.methods.isPasswordMatch = function (password) {
   return bcrypt.compare(password, this.password);
 };
 
+// JWT Generation Methods
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     { _id: this._id, role: this.role },
@@ -106,12 +110,14 @@ userSchema.methods.generateAccessToken = function () {
   );
 };
 
+// Refresh Token Generation Method
 userSchema.methods.generateRefreshToken = function () {
   return jwt.sign({ _id: this._id }, process.env.REFRESH_TOKEN_SECRET, {
     expiresIn: '7d',
   });
 };
 
+// Password Reset Token Generation Method
 userSchema.methods.generatePasswordResetToken = function () {
   const raw = crypto.randomBytes(32).toString('hex');
   this.passwordResetToken = crypto

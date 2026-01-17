@@ -1,5 +1,6 @@
 import Joi from "joi";
 
+// Validation schema for managing user roles
 export const manageUserSchema = Joi.object({
   userId: Joi.string().required(),
   role: Joi.string()

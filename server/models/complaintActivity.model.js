@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 
+// Enums
 const STATUS_ENUM = [
   'SUBMITTED',
   'VERIFIED',
@@ -9,6 +10,7 @@ const STATUS_ENUM = [
   'CLOSED',
 ];
 
+// Complaint Activity Schema
 const complaintActivitySchema = new Schema(
   {
     complaintId: {
@@ -58,7 +60,7 @@ const complaintActivitySchema = new Schema(
   { timestamps: true }
 );
 
-/* Useful for admin dashboards */
+// Indexes for efficient querying
 complaintActivitySchema.index({ action: 1, createdAt: -1 });
 
 export default mongoose.model(

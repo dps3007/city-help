@@ -12,7 +12,6 @@ import { getAdminComplaints } from '../controllers/admin.controller.js';
 import { validate } from '../middlewares/validate.middleware.js';
 import { manageUserSchema } from '../validators/admin.validators.js';
 
-
 const router = express.Router();
 
 // admin deshboard
@@ -51,8 +50,5 @@ router.post(
   checkRole("DEPT_HEAD"),
   createUser
 );
-
-
-
 
 export default router;

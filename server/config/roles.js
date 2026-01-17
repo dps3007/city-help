@@ -1,3 +1,4 @@
+// Define user roles
 export const ROLES = {
   CITIZEN: 'CITIZEN',
   WORKER: 'WORKER',

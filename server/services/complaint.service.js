@@ -2,9 +2,7 @@ import Complaint from '../models/complaint.model.js';
 import ComplaintActivity from '../models/complaintActivity.model.js';
 import User from '../models/user.model.js';
 
-/* =========================
-   STATUS FLOW (STATE MACHINE)
-========================= */
+// Define allowed status transitions
 const STATUS_FLOW = {
   SUBMITTED: ['VERIFIED'],
   VERIFIED: ['ASSIGNED'],
@@ -13,12 +11,11 @@ const STATUS_FLOW = {
   RESOLVED: ['CLOSED'],
 };
 
+// Check if transition is allowed
 const canTransition = (from, to) =>
   STATUS_FLOW[from]?.includes(to);
 
-/* =========================
-   CREATE COMPLAINT (CITIZEN)
-========================= */
+// Create a new complaint
 export const createComplaint = async (payload, user) => {
   const { category, description, attachments = [], location } = payload;
 
@@ -41,9 +38,7 @@ export const createComplaint = async (payload, user) => {
   return complaint;
 };
 
-/* =========================
-   VERIFY COMPLAINT (ADMIN)
-========================= */
+// Verify a complaint (Admin)
 export const verifyComplaint = async (complaintId, admin) => {
   const complaint = await Complaint.findById(complaintId);
   if (!complaint) throw new Error('Complaint not found');
@@ -72,9 +67,7 @@ export const verifyComplaint = async (complaintId, admin) => {
   return complaint;
 };
 
-/* =========================
-   ASSIGN COMPLAINT (ADMIN)
-========================= */
+// Assign complaint to officer (Admin)
 export const assignComplaint = async (complaintId, officerId, admin) => {
   const complaint = await Complaint.findById(complaintId);
   if (!complaint) throw new Error('Complaint not found');
@@ -108,9 +101,7 @@ export const assignComplaint = async (complaintId, officerId, admin) => {
   return complaint;
 };
 
-/* =========================
-   OFFICER WORKFLOW
-========================= */
+// Mark complaint as In Progress (Officer)
 export const markInProgress = async (complaintId, officer) => {
   const complaint = await Complaint.findById(complaintId);
   if (!complaint) throw new Error('Complaint not found');
@@ -134,6 +125,7 @@ export const markInProgress = async (complaintId, officer) => {
   return complaint;
 };
 
+// Resolve complaint (Officer)
 export const resolveComplaint = async (complaintId, officer) => {
   const complaint = await Complaint.findById(complaintId);
   if (!complaint) throw new Error('Complaint not found');
@@ -158,9 +150,7 @@ export const resolveComplaint = async (complaintId, officer) => {
   return complaint;
 };
 
-/* =========================
-   CLOSE COMPLAINT (ADMIN)
-========================= */
+// Close complaint (Admin)
 export const closeComplaint = async (complaintId, admin) => {
   const complaint = await Complaint.findById(complaintId);
   if (!complaint) throw new Error('Complaint not found');

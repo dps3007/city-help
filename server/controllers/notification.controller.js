@@ -3,7 +3,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { sendEmail } from "../utils/mail.js";
 
-
+// Send a notification (and email if provided)
 export const sendNotification = async ({
   userId,
   title,
@@ -41,6 +41,7 @@ export const sendNotification = async ({
   }
 };
 
+// Get notifications for logged-in user
 export const getMyNotifications = asyncHandler(async (req, res) => {
   const notifications = await Notification.find({
     userId: req.user._id,
@@ -54,6 +55,7 @@ export const getMyNotifications = asyncHandler(async (req, res) => {
   );
 });
 
+// Mark a notification as read
 export const markAsRead = asyncHandler(async (req, res) => {
   const notification = await Notification.findOneAndUpdate(
     { _id: req.params.id, userId: req.user._id },
@@ -73,6 +75,7 @@ export const markAsRead = asyncHandler(async (req, res) => {
   );
 });
 
+// Mark all notifications as read
 export const markAllAsRead = asyncHandler(async (req, res) => {
   const result = await Notification.updateMany(
     { userId: req.user._id, isRead: false },
@@ -89,7 +92,7 @@ export const markAllAsRead = asyncHandler(async (req, res) => {
   );
 });
 
-
+// Get count of unread notifications
 export const getUnreadCount = asyncHandler(async (req, res) => {
   const count = await Notification.countDocuments({
     userId: req.user._id,
@@ -104,6 +107,7 @@ export const getUnreadCount = asyncHandler(async (req, res) => {
   );
 });
 
+// Delete a notification
 export const deleteNotification = asyncHandler(async (req, res) => {
   const notification = await Notification.findOneAndDelete({
     _id: req.params.id,

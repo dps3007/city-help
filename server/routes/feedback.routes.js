@@ -9,12 +9,13 @@ import {
 
 const router = Router();
 
-// Citizen
+// Citizen -> submit feedback
 router.post("/", verifyJWT, checkRole("CITIZEN"), createFeedback);
 
-// Admin
+// Dept Head -> get all feedbacks
 router.get("/", verifyJWT, checkRole("DEPT_HEAD"), getAllFeedbacks);
 
+// Dept Head → get feedback for a specific complaint
 router.get("/:complaintId", verifyJWT, checkRole("DEPT_HEAD"), getFeedbackByComplaint);
 
 export default router;
