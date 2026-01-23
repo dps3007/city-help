@@ -438,16 +438,13 @@ export const submitFeedback = asyncHandler(async (req, res) => {
   });
 
   // 🏆 Reward for feedback
-  await addRewardHistory({
-    userId,
-    complaintId: complaint._id,
-    action: "FEEDBACK_SUBMITTED",
-    points: 3,
-  });
+  await addRewardPoints({
+  userId,
+  points: 3,
+  reason: "FEEDBACK_SUBMITTED",
+  complaintId: complaint._id,
+});
 
-  await User.findByIdAndUpdate(userId, { $inc: { communityPoints: 3 }},
-    { new: true }
-  );
 
   return res.status(201).json(
     new ApiResponse(
