@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { getAllComplaints } from "../../services/complaint.service";
 import { useAuth } from "../../context/AuthContext";
+import { getMyRewards } from "../../services/reward.service";
+
 
 
 function CitizenDashboard() {
   const { user } = useAuth();
+  const [rewardPoints, setRewardPoints] = useState(0);
 
+  
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -13,6 +17,20 @@ function CitizenDashboard() {
     if (!user?._id) return;
     fetchComplaints();
   }, [user]);
+
+  useEffect(() => {
+  const loadRewards = async () => {
+    try {
+      const res = await getMyRewards();
+      setRewardPoints(res.totalPoints);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  loadRewards();
+}, []);
+
 
   const fetchComplaints = async () => {
     try {
@@ -47,7 +65,7 @@ function CitizenDashboard() {
         <StatCard title="Total Complaints" value={total} />
         <StatCard title="Active Complaints" value={active} />
         <StatCard title="Resolved Complaints" value={resolved} />
-        <StatCard title="Reward Points" value="—" />
+        <StatCard title="Reward Points" value={rewardPoints} />
       </div>
 
       {/* Recent Complaints */}
