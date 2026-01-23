@@ -4,13 +4,14 @@ import { checkRole } from "../middlewares/role.middleware.js";
 import {
   getMyRewards,
   getUserRewards,
+  getRewardHistory,
 } from "../controllers/reward.controller.js";
 
 const router = Router();
 
 // Citizen / Officer → own rewards
 router.get(
-  "/me", 
+  "/", 
   verifyJWT, 
   getMyRewards
 );
@@ -22,5 +23,10 @@ router.get(
   checkRole("DEPT_HEAD"),
   getUserRewards
 );
+
+// reward history
+router.get("/history",  
+  verifyJWT,
+  getRewardHistory);
 
 export default router;

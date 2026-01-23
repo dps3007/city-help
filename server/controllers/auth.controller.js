@@ -7,10 +7,14 @@ import ApiResponse from "../utils/ApiResponse.js";
 
 //REGISTER (CITIZEN ONLY)
 export const register = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, confirmPassword } = req.body;
 
-  if (!name || !email || !password) {
-    throw new ApiError(400, "Name, email and password are required");
+  if (!name || !email || !password || !confirmPassword) {
+    throw new ApiError(400, "Name, email, password and confirm password are required");
+  }
+
+  if (password !== confirmPassword) {
+    throw new ApiError(400, "Passwords do not match");
   }
 
   const existingUser = await User.findOne({ email });
@@ -18,15 +22,36 @@ export const register = asyncHandler(async (req, res) => {
     throw new ApiError(409, "User already exists");
   }
 
-  await User.create({
+  
+  const userRole = "CITIZEN";
+
+  const user = await User.create({
     name,
     email,
     password,
-    role: "CITIZEN", // 🔒 forced
+    role: userRole,
   });
 
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshTokens.push(refreshToken);
+  await user.save({ validateBeforeSave: false });
+
   return res.status(201).json(
-    new ApiResponse({message: "User registered successfully"})
+    new ApiResponse({
+      message: "User registered successfully",
+      data: { 
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        },
+        accessToken,
+        refreshToken 
+      }, 
+    })
   );
 });
 
@@ -49,8 +74,14 @@ export const login = asyncHandler(async (req, res) => {
     new ApiResponse({
       message: "Login successful",
       data: { 
-        accessToken, 
-        refreshToken 
+        user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      accessToken,
+      refreshToken 
       }, 
     })
   );

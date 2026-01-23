@@ -65,9 +65,16 @@ const userSchema = new Schema(
       lng: Number,
     },
 
+    municipalId: {
+    type: String, // or ObjectId if you have Municipal model
+    required: true,
+    index: true,
+},
+
     communityPoints: {
       type: Number,
       default: 0,
+      index: true,
     },
 
     isEmailVerified: {
@@ -97,8 +104,8 @@ userSchema.pre('save', async function () {
 });
 
 // Instance methods
-userSchema.methods.isPasswordMatch = function (password) {
-  return bcrypt.compare(password, this.password);
+userSchema.methods.isPasswordMatch = async function (password) {
+  return await bcrypt.compare(password, this.password);
 };
 
 // JWT Generation Methods

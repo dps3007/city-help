@@ -1,0 +1,59 @@
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+
+
+function Navbar() {
+  const { user, logout } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
+
+  return (
+    <header className="flex items-center justify-between bg-white dark:bg-gray-900 border-b dark:border-gray-700 px-6 py-3 shadow-sm dark:shadow-lg">
+      {/* Left */}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+          Welcome{user?.name ? `, ${user.name}` : ""}
+        </h2>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          {user?.role || "User Dashboard"}
+        </p>
+      </div>
+
+      {/* Right */}
+      <div className="flex items-center gap-4">
+        {/* Theme Toggle Button */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="relative text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+          title="Toggle dark mode"
+        >
+          {isDarkMode ? "🌙" : "☀️"}
+        </button>
+
+        {/* Notifications (placeholder) */}
+        <button
+          type="button"
+          className="relative text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+        >
+          🔔
+          <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+        </button>
+
+        {/* User Avatar */}
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-semibold">
+            {user?.name?.[0] || "U"}
+          </div>
+          <button
+            onClick={logout}
+            className="text-sm text-red-600 hover:underline"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+export default Navbar;

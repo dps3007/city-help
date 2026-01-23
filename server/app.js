@@ -12,13 +12,17 @@ import notificationRoutes from './routes/notification.routes.js';
 import rewardRoutes from './routes/reward.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
+import leaderboardRoutes from "./routes/leaderboard.routes.js";
 
 import helmet from "helmet";
 
 const app = express();
 
 // Enable CORS
-app.use(cors());
+app.use(cors({
+  origin: ["http://localhost:5173", "http://localhost:5174"],
+  credentials: true
+}));
 
 // Body parsers
 app.use(express.json());
@@ -40,6 +44,7 @@ app.use('/api/v1/feedback', feedbackRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/rewards', rewardRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use("/api/v1/leaderboard", leaderboardRoutes);
 
 // Health check endpoint
 app.get('/health', (_, res) => {

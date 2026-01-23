@@ -6,17 +6,42 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { sendNotification } from "./notification.controller.js";
 import User from "../models/user.model.js";
+import { Feedback } from "../models/feedback.model.js";
+import { addRewardHistory } from "../utils/addrewardHistory.js";
 
 // Create a new complaint
 export const createComplaint = asyncHandler(async (req, res) => {
+  const { category, description, location: locationStr } = req.body;
+  const file = req.file;
+
+  // Parse location if it's a JSON string
+  let location = null;
+  if (locationStr) {
+    try {
+      location = typeof locationStr === "string" ? JSON.parse(locationStr) : locationStr;
+    } catch (e) {
+      location = { address: locationStr };
+    }
+  }
+
+  // Build attachments array if image uploaded
+  const attachments = [];
+  if (file) {
+    attachments.push({
+      url: `/api/v1/uploads/${file.filename}`, // Placeholder - use Cloudinary in production
+      type: "IMAGE",
+    });
+  }
+
   const complaint = await ComplaintService.createComplaint(
-    req.body,
+    { category, description, attachments, location },
     req.user
   );
   
   return res.status(201).json(
-    new ApiResponse({ message: "Complaint created successfully",
-      data : {complaint}
+    new ApiResponse({ 
+      message: "Complaint created successfully",
+      data: { complaint }
     })
   );
 });
@@ -49,7 +74,7 @@ export const getComplaints = asyncHandler(async (req, res) => {
 // Get complaint by ID with access control
 export const getComplaintById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const user = req.user;
+  const user = req.user._id;
 
   const complaint = await Complaint.findById(id);
   if (!complaint) {
@@ -80,19 +105,14 @@ export const getComplaintById = asyncHandler(async (req, res) => {
 
 // Verify a complaint
 export const verifyComplaint = asyncHandler(async (req, res) => {
-  const user = req.user;
+  const officer = req.user;
 
   const complaint = await Complaint.findById(req.params.id);
   if (!complaint) {
     throw new ApiError(404, "Complaint not found");
   }
 
-  // ✅ CHANGED: correct enum
-  if (complaint.status === "VERIFIED") {
-    throw new ApiError(400, "Complaint already verified");
-  }
-
-  // ✅ CHANGED: only SUBMITTED can be verified
+  // Only SUBMITTED → VERIFIED
   if (complaint.status !== "SUBMITTED") {
     throw new ApiError(
       400,
@@ -100,31 +120,34 @@ export const verifyComplaint = asyncHandler(async (req, res) => {
     );
   }
 
-  complaint.status = "VERIFIED";         // ✅ CHANGED
-  complaint.verifiedBy = user._id;
+  // Update complaint
+  complaint.status = "VERIFIED";
+  complaint.verifiedBy = officer._id;
   complaint.verifiedAt = new Date();
   await complaint.save();
 
-  // ✅ CHANGED: fetch citizen properly
+  // Fetch citizen
   const citizen = await User.findById(complaint.citizen);
   if (!citizen) {
     throw new ApiError(404, "Citizen not found");
   }
 
-  await addRewardPoints({
-    userId: citizen._id,
-    points: 5,
-    reason: "COMPLAINT_VERIFIED",
-    complaintId: complaint._id,
-  });
+ await addRewardPoints({
+  userId: citizen._id,
+  points: 3,
+  reason: "COMPLAINT_VERIFIED",
+  complaintId: complaint._id,
+});
 
+
+  // 🔔 Notification
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
     title: "Complaint Verified",
-    message: `Your complaint has been verified by ${user.name}.`,
-    type: "STATUS",                    
-    event: "COMPLAINT_VERIFIED",        
+    message: `Your complaint has been verified by ${officer.name}.`,
+    type: "STATUS",
+    event: "COMPLAINT_VERIFIED",
     email: citizen.email,
     complaintId: complaint._id,
   });
@@ -270,12 +293,13 @@ export const resolveComplaint = asyncHandler(async (req, res) => {
   }
 
   await addRewardPoints({
-    userId: citizen._id,
-    points: 10,
-    reason: "COMPLAINT_RESOLVED",
-    complaintId: complaint._id,
-  });
+  userId: citizen._id,
+  points: 4,
+  reason: "COMPLAINT_RESOLVED",
+  complaintId: complaint._id,
+});
 
+  // 🔔 Notification to citizen
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
@@ -339,6 +363,101 @@ export const closeComplaint = asyncHandler(async (req, res) => {
     })
   );
 });
+
+// Citizen → upvote complaint
+export const upvoteComplaint = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user._id;
+
+  const complaint = await Complaint.findById(id);
+  if (!complaint) {
+    throw new ApiError(404, "Complaint not found");
+  }
+
+  // Check if user already upvoted
+  if (complaint.upvotes.includes(userId)) {
+    // Remove upvote
+    complaint.upvotes = complaint.upvotes.filter(id => id.toString() !== userId.toString());
+  } else {
+    // Add upvote
+    complaint.upvotes.push(userId);
+  }
+
+  await complaint.save();
+
+  return res.status(200).json(
+    new ApiResponse({
+      message: "Complaint upvoted successfully",
+      data: { complaint },
+    })
+  );
+});
+
+// Citizen → submit feedback
+export const submitFeedback = asyncHandler(async (req, res) => {
+  const { id } = req.params; // complaintId
+  const { rating, comment } = req.body;
+  const userId = req.user._id;
+
+  if (!rating) {
+    throw new ApiError(400, "Rating is required");
+  }
+
+  const complaint = await Complaint.findById(id);
+  if (!complaint) {
+    throw new ApiError(404, "Complaint not found");
+  }
+
+  // ✅ Feedback allowed after RESOLVED or CLOSED
+  if (!["RESOLVED", "CLOSED"].includes(complaint.status)) {
+    throw new ApiError(
+      400,
+      "Feedback can only be submitted after complaint is resolved or closed"
+    );
+  }
+
+  // ✅ Prevent duplicate feedback
+  const existingFeedback = await Feedback.findOne({
+    complaint: id,
+    user: userId,
+  });
+
+  if (existingFeedback) {
+    throw new ApiError(
+      400,
+      "You have already submitted feedback for this complaint"
+    );
+  }
+
+  // ✅ Create feedback
+  const feedback = await Feedback.create({
+    complaint: id,
+    user: userId,
+    rating,
+    comment,
+  });
+
+  // 🏆 Reward for feedback
+  await addRewardHistory({
+    userId,
+    complaintId: complaint._id,
+    action: "FEEDBACK_SUBMITTED",
+    points: 3,
+  });
+
+  await User.findByIdAndUpdate(userId, { $inc: { communityPoints: 3 }},
+    { new: true }
+  );
+
+  return res.status(201).json(
+    new ApiResponse(
+      201,
+      { feedback },
+      "Feedback submitted successfully"
+    )
+  );
+});
+
 
 
 

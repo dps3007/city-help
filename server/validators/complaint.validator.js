@@ -8,13 +8,5 @@ export const createComplaintSchema = Joi.object({
 
   description: Joi.string().min(10).max(1000).required(),
 
-  location: Joi.object({
-    city: Joi.string().required(),
-    district: Joi.string().required(),
-    state: Joi.string().required(),
-    coordinates: Joi.object({
-      lat: Joi.number().min(-90).max(90).required(),
-      lng: Joi.number().min(-180).max(180).required(),
-    }).required(),
-  }).required(),
-}).unknown(false);
+  location: Joi.string().optional(), // Allow string format from frontend
+}).unknown(true); // Allow extra fields like image
