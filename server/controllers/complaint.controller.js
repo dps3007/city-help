@@ -7,7 +7,8 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { sendNotification } from "./notification.controller.js";
 import User from "../models/user.model.js";
 import { Feedback } from "../models/feedback.model.js";
-import { addRewardHistory } from "../utils/addrewardHistory.js";
+import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
+
 
 // Create a new complaint
 export const createComplaint = asyncHandler(async (req, res) => {
@@ -26,9 +27,12 @@ export const createComplaint = asyncHandler(async (req, res) => {
 
   // Build attachments array if image uploaded
   const attachments = [];
+
   if (file) {
+    const result = await uploadToCloudinary(file.buffer);
+
     attachments.push({
-      url: `/api/v1/uploads/${file.filename}`, // Placeholder - use Cloudinary in production
+      url: result.secure_url, 
       type: "IMAGE",
     });
   }
