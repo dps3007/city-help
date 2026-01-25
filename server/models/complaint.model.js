@@ -90,6 +90,12 @@ const complaintSchema = new Schema(
       default: null,
     },
 
+    feedback: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Feedback",
+      default: null,
+    },
+
     resolvedAt: {
       type: Date,
       default: null,

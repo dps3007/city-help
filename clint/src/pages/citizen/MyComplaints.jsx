@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { getMyComplaints } from "../../services/complaint.service";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+
 
 function MyComplaints() {
   const [complaints, setComplaints] = useState([]);
@@ -41,7 +43,7 @@ function MyComplaints() {
               <th className="px-6 py-3 text-left">Status</th>
               <th className="px-6 py-3 text-left">Upvotes</th>
               <th className="px-6 py-3 text-left">Created</th>
-              <th className="px-6 py-3 text-left">Action</th>
+              <th className="px-6 py-3 text-left">View</th>
             </tr>
           </thead>
 
@@ -80,14 +82,12 @@ function MyComplaints() {
                   ).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-3">
-                  <button
-                    onClick={() =>
-                      navigate(`/complaints/${complaint._id}`)
-                    }
+                  <Link
+                    to={`/complaints/${complaint._id}`}
                     className="text-blue-600 hover:underline"
                   >
                     View
-                  </button>
+                  </Link>
                 </td>
               </tr>
             ))}

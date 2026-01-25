@@ -45,11 +45,17 @@ function App() {
         {user?.role === "CITIZEN" ? (
           <>
             <Route index element={<CitizenDashboard />} />
+
             <Route path="complaints/new" element={<FileComplaint />} />
+
             <Route path="complaints" element={<MyComplaints />} />
+
             <Route path="complaints/:id" element={<ComplaintDetail />} />
+
             <Route path="rewards" element={<Rewards />} />
+
             <Route path="rewards/history" element={<RewardHistoryPage />} />
+
           </>
         ) : (
           <>

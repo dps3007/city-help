@@ -76,7 +76,10 @@ export const getComplaintById = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const user = req.user._id;
 
-  const complaint = await Complaint.findById(id);
+  const complaint = await Complaint.findById(id)
+  .populate("feedback")
+  .populate("assignedTo", "name email role")
+  .populate("verifiedBy", "name email role");
   if (!complaint) {
     throw new ApiError(404, "Complaint not found");
   }
@@ -399,15 +402,22 @@ export const submitFeedback = asyncHandler(async (req, res) => {
   const { rating, comment } = req.body;
   const userId = req.user._id;
 
-  if (!rating) {
-    throw new ApiError(400, "Rating is required");
+
+  // ✅ Strict rating validation
+  if (typeof rating !== "number" || rating < 1 || rating > 5) {
+    throw new ApiError(400, "Rating must be a number between 1 and 5");
   }
 
   const complaint = await Complaint.findById(id);
   if (!complaint) {
     throw new ApiError(404, "Complaint not found");
   }
-
+  
+  // ✅ Ownership check
+  if (!complaint.citizen.equals(userId)) {
+    throw new ApiError(403, "You can only give feedback on your own complaints");
+  }
+  
   // ✅ Feedback allowed after RESOLVED or CLOSED
   if (!["RESOLVED", "CLOSED"].includes(complaint.status)) {
     throw new ApiError(
@@ -437,21 +447,22 @@ export const submitFeedback = asyncHandler(async (req, res) => {
     comment,
   });
 
+  complaint.feedback = feedback._id;
+  await complaint.save();
+
   // 🏆 Reward for feedback
   await addRewardPoints({
   userId,
   points: 3,
-  reason: "FEEDBACK_SUBMITTED",
+  reason: "FEEDBACK_GIVEN",
   complaintId: complaint._id,
 });
 
-
   return res.status(201).json(
-    new ApiResponse(
-      201,
-      { feedback },
-      "Feedback submitted successfully"
-    )
+    new ApiResponse({
+      message: "Feedback submitted successfully",
+      data: { feedback },
+    })
   );
 });
 
