@@ -8,6 +8,7 @@ const STATUS_ENUM = [
   'IN_PROGRESS',
   'RESOLVED',
   'CLOSED',
+  'REJECTED',
 ];
 
 // Category options
@@ -59,31 +60,38 @@ const complaintSchema = new Schema(
         type: String,
         trim: true,
       },
+
       city: {
         type: String,
         required: true,
         index: true,
       },
+
       district: {
         type: String,
         required: true,
         index: true,
       },
+
       state: {
         type: String,
         required: true,
         index: true,
       },
+
       pincode: {
         type: String,
       },
+
       coordinates: {
         lat: {
           type: Number,
         },
+
         lng: {
           type: Number,
         },
+        
       },
       autoDetected: {
         type: Boolean,
@@ -166,8 +174,12 @@ const complaintSchema = new Schema(
 );
 
 // Indexes for efficient querying
-complaintSchema.index({ status: 1, district: 1 });
-complaintSchema.index({ category: 1, status: 1 });
+complaintSchema.index({ "location.state": 1 });
+complaintSchema.index({ "location.district": 1 });
+complaintSchema.index({ department: 1 });
+complaintSchema.index({ assignedTo: 1 });
+complaintSchema.index({ assignedWorker: 1 });
+complaintSchema.index({ status: 1 });
 
 // Pre-save hook to generate complaintId and maintain upvoteCount
 complaintSchema.pre('save', function (next) {

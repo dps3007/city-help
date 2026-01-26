@@ -1,41 +1,40 @@
 import { useEffect, useState } from "react";
-import { getAllComplaints } from "../../services/complaint.service";
+import {
+  getDashboardStats,
+  getAdminComplaints,
+} from "../../services/admin.service";
 import { useRole } from "../../hooks/useRole";
 
 function AdminDashboard() {
   const { role } = useRole();
+
+  const [stats, setStats] = useState(null);
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAll = async () => {
+    const fetchDashboard = async () => {
       try {
-        const data = await getAllComplaints();
-        setComplaints(data || []);
+        const [statsData, complaintsData] = await Promise.all([
+          getDashboardStats(),      // 🔐 role-aware backend
+          getAdminComplaints(),     // 🔐 role-aware backend
+        ]);
+
+        setStats(statsData);
+        setComplaints(complaintsData || []);
       } catch (err) {
-        console.error("Failed to fetch complaints", err);
+        console.error("Failed to load admin dashboard", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAll();
+    fetchDashboard();
   }, []);
 
   if (loading) {
     return <p className="text-gray-600">Loading admin dashboard...</p>;
   }
-
-  const total = complaints.length;
-  const pending = complaints.filter(
-    (c) => c.status === "SUBMITTED" || c.status === "VERIFIED"
-  ).length;
-  const inProgress = complaints.filter(
-    (c) => c.status === "ASSIGNED" || c.status === "IN_PROGRESS"
-  ).length;
-  const resolved = complaints.filter(
-    (c) => c.status === "RESOLVED" || c.status === "CLOSED"
-  ).length;
 
   return (
     <div className="space-y-6">
@@ -49,12 +48,12 @@ function AdminDashboard() {
         </p>
       </div>
 
-      {/* Metrics */}
+      {/* Metrics (FROM BACKEND) */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <Metric title="Total Complaints" value={total} />
-        <Metric title="Pending" value={pending} />
-        <Metric title="In Progress" value={inProgress} />
-        <Metric title="Resolved" value={resolved} />
+        <Metric title="Total Complaints" value={stats.totalComplaints} />
+        <Metric title="Pending" value={stats.pendingComplaints} />
+        <Metric title="Resolved" value={stats.resolvedComplaints} />
+        <Metric title="Closed" value={stats.closedComplaints} />
       </div>
 
       {/* Recent Complaints */}
@@ -75,6 +74,7 @@ function AdminDashboard() {
               <th className="px-6 py-3 text-left">Created</th>
             </tr>
           </thead>
+
           <tbody>
             {complaints.length === 0 && (
               <tr>

@@ -96,6 +96,13 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
+//indexes
+userSchema.index({ role: 1 });
+userSchema.index({ state: 1 });
+userSchema.index({ district: 1 });
+userSchema.index({ municipalId: 1 });
+userSchema.index({ communityPoints: -1 });
+
 // Pre-save hook to hash password if modified
 userSchema.pre('save', async function () {
   if (this.isModified('password')) {

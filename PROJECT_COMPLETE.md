@@ -39,20 +39,21 @@
 - Register & Login     ✅ 
 - File Complaints (with geolocation + images)    ✅ 
 - View My Complaints    ✅ 
-- View Complaint Details
-- Upvote Complaints
-- Submit Feedback (rating + comment)
+- View Complaint Details  ✅
+- Upvote Complaints       ✅
+- Submit Feedback (rating + comment)  ✅
 - Earn Rewards (points system)   ✅ 
 - View Achievements & Milestones   ✅ 
+- Leaderboard            ✅
 
 #### ADMIN (All Non-CITIZEN Roles)
-- View Dashboard (statistics)
+- View Dashboard (statistics)  ✅
 - Manage All Complaints   ✅  
 - Verify Complaints     ✅ 
 - Assign Officers      ✅ 
 - Update Complaint Status   ✅ 
 - Close Resolved Complaints  ✅ 
-- Role-based action visibility  
+- Role-based action visibility   ✅
 - add new authority
 -update role (below its level)
 
