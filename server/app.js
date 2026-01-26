@@ -13,6 +13,7 @@ import rewardRoutes from './routes/reward.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import leaderboardRoutes from "./routes/leaderboard.routes.js";
+import locationRoutes from "./routes/location.routes.js";
 
 import helmet from "helmet";
 
@@ -45,6 +46,7 @@ app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/rewards', rewardRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use("/api/v1/leaderboard", leaderboardRoutes);
+app.use("/api/v1/location", locationRoutes);
 
 // Health check endpoint
 app.get('/health', (_, res) => {

@@ -55,20 +55,42 @@ const complaintSchema = new Schema(
     ],
 
     location: {
-      address: String,
-      city: { type: String, index: true },
-      district: { type: String, index: true },
-      state: { type: String, index: true },
-      pincode: String,
+      localAddress: {
+        type: String,
+        trim: true,
+      },
+      city: {
+        type: String,
+        required: true,
+        index: true,
+      },
+      district: {
+        type: String,
+        required: true,
+        index: true,
+      },
+      state: {
+        type: String,
+        required: true,
+        index: true,
+      },
+      pincode: {
+        type: String,
+      },
       coordinates: {
-        lat: Number,
-        lng: Number,
+        lat: {
+          type: Number,
+        },
+        lng: {
+          type: Number,
+        },
       },
       autoDetected: {
         type: Boolean,
         default: false,
       },
     },
+
 
     status: {
       type: String,

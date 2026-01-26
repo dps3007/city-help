@@ -10,12 +10,16 @@ import { Feedback } from "../models/feedback.model.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 
 
+
 // Create a new complaint
 export const createComplaint = asyncHandler(async (req, res) => {
   const { category, description, location: locationStr } = req.body;
   const file = req.file;
 
-  // Parse location if it's a JSON string
+  if (!req.file) {
+    throw new ApiError(400, "Complaint image is required");
+  }
+
   let location = null;
   if (locationStr) {
     try {
@@ -30,6 +34,7 @@ export const createComplaint = asyncHandler(async (req, res) => {
 
   if (file) {
     const result = await uploadToCloudinary(file.buffer);
+
 
     attachments.push({
       url: result.secure_url, 
