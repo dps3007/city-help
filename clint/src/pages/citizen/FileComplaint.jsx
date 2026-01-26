@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { createComplaint } from "../../services/complaint.service";
+import api from "../../services/api";
+
 
 const CATEGORIES = [
   { value: "GARBAGE", label: "Garbage" },
@@ -20,12 +22,15 @@ function FileComplaint() {
     city: "",
     district: "",
     state: "",
+    localAddress: "",
+    pincode: "",
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
+  const [imageFile, setImageFile] = useState(null);
+  
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     setForm((prev) => ({
@@ -35,27 +40,49 @@ function FileComplaint() {
   };
 
   const detectLocation = () => {
-    if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser");
-      return;
-    }
+      if (!navigator.geolocation) {
+        alert("Geolocation not supported");
+        return;
+      }
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        setForm((prev) => ({ 
-          ...prev, 
-          location: `${lat}, ${lng}`,
-          coordinates: { lat, lng }
-        }));
-      },
-      () => setError("Unable to fetch location")
-    );
-  };
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+
+          const res = await api.get(
+            `/location/reverse?lat=${lat}&lng=${lng}`
+          );
+
+          const data = res.data;
+
+          setForm((prev) => ({
+            ...prev,
+            city: data.city,
+            district: data.district,
+            state: data.state,
+             pincode: data.pincode || prev.pincode,
+             localAddress:
+              prev.localAddress ||
+              data.suburb ||
+              data.neighbourhood ||
+              "",
+            coordinates: { lat, lng },
+            location: `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
+          }));
+        },
+        () => alert("Location permission denied")
+      );
+    };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.city || !form.district || !form.state) {
+      alert("City, District and State are required");
+      return;
+    }
+
     setError("");
     setSuccess("");
 
@@ -76,6 +103,8 @@ function FileComplaint() {
         city: form.city || "Unknown",
         district: form.district || "Unknown",
         state: form.state || "Unknown",
+        localAddress: form.localAddress || "Unknown",
+        pincode: form.pincode,
         coordinates: form.coordinates,
       };
       formData.append("location", JSON.stringify(locationObj));
@@ -95,6 +124,7 @@ function FileComplaint() {
         city: "",
         district: "",
         state: "",
+        localAddress: "", 
       });
     } catch (err) {
       setError(err.response?.data?.message || "Failed to submit complaint");
@@ -151,7 +181,7 @@ function FileComplaint() {
         {/* Image */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Upload Image (optional)
+            Upload Image
           </label>
           <input
             type="file"
@@ -182,11 +212,20 @@ function FileComplaint() {
                 onClick={detectLocation}
                 className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
               >
-                Detect
+                📍 Detect My Location
               </button>
             </div>
             
             <div className="grid grid-cols-3 gap-2">
+              <input
+                type="text"
+                name="localAddress"
+                value={form.localAddress}
+                onChange={handleChange}
+                className="w-full rounded border px-3 py-2 text-sm"
+                placeholder="Local address / area / landmark (optional)"
+              />
+
               <input
                 type="text"
                 name="city"
@@ -211,6 +250,15 @@ function FileComplaint() {
                 className="rounded border px-3 py-2 text-sm"
                 placeholder="State"
               />
+              <input
+                type="text"
+                name="pincode"
+                value={form.pincode}
+                onChange={handleChange}
+                className="rounded border px-3 py-2 text-sm"
+                placeholder="Pincode"
+              />
+
             </div>
           </div>
         </div>

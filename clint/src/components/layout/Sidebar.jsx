@@ -24,13 +24,13 @@ function Sidebar() {
         {/* Citizen Links */}
         {role === "CITIZEN" && (
           <>
-            <NavLink to="/" className={linkClass}>
+            <NavLink to="/" end className={linkClass}>
               Dashboard
             </NavLink>
             <NavLink to="/complaints/new" className={linkClass}>
               File Complaint
             </NavLink>
-            <NavLink to="/complaints" className={linkClass}>
+            <NavLink to="/complaints" end className={linkClass}>
               My Complaints
             </NavLink>
             <NavLink to="/rewards" className={linkClass}>
@@ -45,7 +45,7 @@ function Sidebar() {
         {/* Admin / Officer / Dept Head Links */}
         {role !== "CITIZEN" && (
           <>
-            <NavLink to="/" className={linkClass}>
+            <NavLink to="/" end className={linkClass}>
               Dashboard
             </NavLink>
             <NavLink to="/complaints" className={linkClass}>

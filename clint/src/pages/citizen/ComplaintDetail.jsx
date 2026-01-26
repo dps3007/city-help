@@ -10,6 +10,8 @@ import StatusStepper from "../../components/complaints/StatusStepper";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import FeedbackModal from "../../components/feedback/FeedbackModal";
+import ComplaintMap from "../../components/common/ComplaintMap";
+
 
 
 const STATUS_ORDER = [
@@ -35,6 +37,8 @@ function ComplaintDetail() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedback, setFeedback] = useState({ rating: 5, comment: "" });
   const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [focusMap, setFocusMap] = useState(false);
+
 
   // fatch complaint details
   const fetchComplaint = async () => {
@@ -160,18 +164,35 @@ function ComplaintDetail() {
       {/* Location */}
       {complaint.location && (
         <div className="bg-white rounded shadow-sm p-6">
-          <h2 className="text-lg font-semibold mb-3">Location</h2>
+        <h2 className="text-lg font-semibold mb-3">Location</h2>
+
           <p className="text-gray-700">
             {complaint.location.city}, {complaint.location.state}
           </p>
-          {complaint.location.coordinates && (
-            <p className="text-sm text-gray-500 mt-1">
-              Lat: {complaint.location.coordinates.lat}, Lng:{" "}
-              {complaint.location.coordinates.lng}
-            </p>
-          )}
-        </div>
-      )}
+            {complaint.location?.coordinates && (
+          <div className="bg-white rounded shadow-sm p-6">
+            <h2 className="text-lg font-semibold mb-3 flex justify-between items-center">
+              Location
+              <Button
+                onClick={() => {
+                  setFocusMap(false);
+                  setTimeout(() => setFocusMap(true), 100);
+                }}
+                className="bg-green-600 hover:bg-green-700 text-sm"
+              >
+                📍 Go to Location
+              </Button>
+            </h2>
+
+            <ComplaintMap
+              lat={complaint.location.coordinates.lat}
+              lng={complaint.location.coordinates.lng}
+              focus={focusMap}
+            />
+          </div>
+        )}
+  </div>
+)}
 
       {/* Status */}
       <div className="bg-white rounded shadow-sm p-6">
@@ -235,7 +256,7 @@ function ComplaintDetail() {
 
       {/* Feedback Card */}
       {resolvedOrClosed && complaint.feedback && (
-        <div className="bg-white rounded-l p-6 max-w-2xl">
+        <div className="bg-white rounded p-6 ">
           <div className="flex justify-between mb-4">
             <div className="flex gap-1 text-blue-800">
               {Array.from({ length: complaint.feedback.rating }).map((_, i) => (

@@ -15,6 +15,8 @@ import AdminDashboard from "../pages/admin/AdminDashboard";
 import ManageComplaints from "../pages/admin/ManageComplaints";
 import Leaderboard from "../pages/leaderboard/Leaderboard";
 import RewardHistoryPage from "../pages/citizen/RewardHistoryPage";
+import "leaflet/dist/leaflet.css";
+
 
 
 function App() {
