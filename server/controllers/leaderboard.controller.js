@@ -1,12 +1,9 @@
 import User from "../models/user.model.js";
 
-/**
- * GLOBAL LEADERBOARD
- * All municipal corporation users
- */
+/// GLOBAL LEADERBOARD
 export const getGlobalLeaderboard = async (req, res) => {
   try {
-    const users = await User.find()
+    const users = await User.find({ role: "CITIZEN" })
       .select("name municipalId communityPoints")
       .sort({ communityPoints: -1 })
       .limit(50);
@@ -17,15 +14,12 @@ export const getGlobalLeaderboard = async (req, res) => {
   }
 };
 
-/**
- * LOCAL LEADERBOARD
- * Only one municipal community / ward
- */
+/// LOCAL LEADERBOARD
 export const getLocalLeaderboard = async (req, res) => {
   try {
     const { municipalId } = req.params;
 
-    const users = await User.find({ municipalId })
+    const users = await User.find({ municipalId, role: "CITIZEN" })
       .select("name municipalId communityPoints")
       .sort({ communityPoints: -1 })
       .limit(50);
