@@ -1,23 +1,21 @@
 import express from 'express';
 import { 
   getDashboardStats, 
+  getAdminComplaints,
   manageUser, 
   getAllUsers,
   createUser
  } from '../controllers/admin.controller.js';
 import { verifyJWT } from '../middlewares/auth.middleware.js';
 import { checkRole } from '../middlewares/role.middleware.js';
-import { adminLimiter } from '../middlewares/rateLimit.middleware.js';
-import { getAdminComplaints } from '../controllers/admin.controller.js';
-import { validate } from '../middlewares/validate.middleware.js';
-import { manageUserSchema } from '../validators/admin.validators.js';
+
 
 const router = express.Router();
 
 // admin deshboard
 router.get(
   '/dashboard',
-  verifyJWT,adminLimiter,
+  verifyJWT,
   checkRole('DISTRICT_ADMIN'),
   getDashboardStats
 );
@@ -31,12 +29,10 @@ router.get(
 );
 
 // manage users
-router.post(
-  '/users/manage',
+router.patch(
+  '/users/:id/role',
   verifyJWT,
-  adminLimiter,
-  checkRole('DISTRICT_ADMIN'),
-  validate(manageUserSchema),
+  checkRole('DEPT_HEAD'),
   manageUser
 );
 

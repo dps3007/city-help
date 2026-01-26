@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useRole } from "../../hooks/useRole";
+import { ADMIN_MENU } from "../../config/adminMenu";
 
 function Sidebar() {
   const { role } = useRole();
@@ -11,6 +12,11 @@ function Sidebar() {
         : "text-gray-700 hover:bg-gray-200"
     }`;
 
+  // filter admin menu by role
+  const adminMenu = ADMIN_MENU.filter(item =>
+    item.roles.includes(role)
+  );
+
   return (
     <aside className="w-64 bg-gray-400 border-r shadow-sm">
       {/* Logo */}
@@ -21,7 +27,8 @@ function Sidebar() {
 
       {/* Navigation */}
       <nav className="p-4 space-y-1">
-        {/* Citizen Links */}
+
+        {/* 🟢 CITIZEN MENU */}
         {role === "CITIZEN" && (
           <>
             <NavLink to="/" end className={linkClass}>
@@ -42,25 +49,29 @@ function Sidebar() {
           </>
         )}
 
-        {/* Admin / Officer / Dept Head Links */}
+        {/* 🔵 ADMIN / OFFICER / DEPT HEAD MENU */}
         {role !== "CITIZEN" && (
           <>
-            <NavLink to="/" end className={linkClass}>
-              Dashboard
-            </NavLink>
-            <NavLink to="/complaints" className={linkClass}>
-              Manage Complaints
-            </NavLink>
+            {adminMenu.map(item => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={linkClass}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+
             <NavLink to="/profile" className={linkClass}>
               Profile
             </NavLink>
           </>
         )}
 
+        {/* 🔷 COMMON */}
         <NavLink to="/leaderboard" className={linkClass}>
           Leaderboard
         </NavLink>
-
       </nav>
     </aside>
   );

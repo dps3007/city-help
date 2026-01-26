@@ -37,6 +37,7 @@ const userSchema = new Schema(
       type: String,
       enum: [
         'CITIZEN',
+        'WORKER',
         'OFFICER',
         'DEPT_HEAD',
         'DISTRICT_ADMIN',
@@ -66,10 +67,10 @@ const userSchema = new Schema(
     },
 
     municipalId: {
-    type: String, // or ObjectId if you have Municipal model
-    required: true,
-    index: true,
-},
+      type: String, // or ObjectId if you have Municipal model
+      required: true,
+      index: true,
+    },
 
     communityPoints: {
       type: Number,
@@ -87,6 +88,11 @@ const userSchema = new Schema(
       default: [],
     },
 
+    isActive: {
+      type: Boolean,
+      default: true
+    },
+
     passwordResetToken: String,
     passwordResetTokenExpiry: Date,
 
@@ -96,12 +102,6 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-//indexes
-userSchema.index({ role: 1 });
-userSchema.index({ state: 1 });
-userSchema.index({ district: 1 });
-userSchema.index({ municipalId: 1 });
-userSchema.index({ communityPoints: -1 });
 
 // Pre-save hook to hash password if modified
 userSchema.pre('save', async function () {

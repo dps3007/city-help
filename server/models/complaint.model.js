@@ -173,14 +173,6 @@ const complaintSchema = new Schema(
   { timestamps: true }
 );
 
-// Indexes for efficient querying
-complaintSchema.index({ "location.state": 1 });
-complaintSchema.index({ "location.district": 1 });
-complaintSchema.index({ department: 1 });
-complaintSchema.index({ assignedTo: 1 });
-complaintSchema.index({ assignedWorker: 1 });
-complaintSchema.index({ status: 1 });
-
 // Pre-save hook to generate complaintId and maintain upvoteCount
 complaintSchema.pre('save', function (next) {
   // Generate human-readable complaint ID

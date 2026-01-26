@@ -81,45 +81,63 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
 
 // update user role with proper checks
 export const manageUser = asyncHandler(async (req, res) => {
-  const { userId, role: newRole } = req.body;
+  const userId = req.params.id;
+  let { role } = req.body;
 
-  if (!userId || !newRole) {
-    throw new ApiError(400, "userId and role are required");
+  if (!role || typeof role !== "string") {
+    throw new ApiError(400, "Role is required");
   }
 
-  if (!ROLE_LEVEL[newRole]) {
+  role = role.trim().toUpperCase(); // 🔥 FIX
+
+  console.log("LOGGED IN:", req.user.role);
+  console.log("TARGET:", userId, "NEW ROLE:", role);
+  console.log("RAW ROLE FROM BODY:", req.body.role, typeof req.body.role);
+console.log("ROLE_LEVEL KEYS:", Object.keys(ROLE_LEVEL));
+
+
+  if (!(role in ROLE_LEVEL)) {
     throw new ApiError(400, "Invalid role");
   }
+ 
+
 
   const targetUser = await User.findById(userId);
+  console.log("TARGET USER CURRENT ROLE:", targetUser.role);
   if (!targetUser) {
     throw new ApiError(404, "User not found");
   }
 
-  if (targetUser._id.equals(req.user._id)) {
-    throw new ApiError(400, "You cannot change your own role");
-  }
-
   const currentUserLevel = ROLE_LEVEL[req.user.role];
   const targetUserLevel = ROLE_LEVEL[targetUser.role];
-  const newRoleLevel = ROLE_LEVEL[newRole];
+  const newRoleLevel = ROLE_LEVEL[role];
+
+  console.log("CURRENT USER LEVEL:", currentUserLevel);
+  console.log("TARGET USER LEVEL:", targetUserLevel);
+  console.log("NEW ROLE LEVEL:", newRoleLevel);
+
 
   if (targetUserLevel >= currentUserLevel) {
-    throw new ApiError(403, "Cannot modify equal or higher role");
+    throw new ApiError(403, "Cannot modify equal or higher role user");
   }
 
   if (newRoleLevel >= currentUserLevel) {
     throw new ApiError(403, "Cannot assign equal or higher role");
   }
 
-  const oldRole = targetUser.role;
-  targetUser.role = newRole;
-  await targetUser.save();
+  const updatedUser = await User.findByIdAndUpdate(
+  userId,
+  { role },
+  { new: true, runValidators: true }
+);
 
   return res.status(200).json(
     new ApiResponse({
-      data: { userId, oldRole, newRole },
       message: "User role updated successfully",
+      data: {
+        id: targetUser._id,
+        role: targetUser.role,
+      },
     })
   );
 });
