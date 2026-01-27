@@ -10,6 +10,16 @@ import { Feedback } from "../models/feedback.model.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 
 
+export const getAllComplaints = asyncHandler(async (req, res) => {
+  const complaints = await Complaint.find()
+    .populate("citizen", "name email")
+    .populate("verifiedBy", "name email role")
+    .populate("assignedTo", "name email role")
+    .sort({ createdAt: -1 });
+
+  res.status(200).json(complaints);
+});
+
 
 // Create a new complaint
 export const createComplaint = asyncHandler(async (req, res) => {
@@ -55,6 +65,7 @@ export const createComplaint = asyncHandler(async (req, res) => {
   );
 });
 
+
 // Get complaints for current user (citizen or officer)
 export const getComplaints = asyncHandler(async (req, res) => {
   const user = req.user;
@@ -69,6 +80,7 @@ export const getComplaints = asyncHandler(async (req, res) => {
   }
 
   const complaints = await Complaint.find(filter)
+    .populate("verifiedBy", "name email role")
     .sort({ createdAt: -1 })
     .limit(50);
 

@@ -7,6 +7,7 @@ import { createComplaintSchema } from "../validators/complaint.validator.js";
 
 import {
   createComplaint,
+  getAllComplaints,
   getComplaints,
   getComplaintById,
   verifyComplaint,
@@ -34,6 +35,7 @@ const upload = multer({
   },
 });
 
+
 // Citizen → create complaint
 router.post(
   "/",
@@ -46,6 +48,8 @@ router.post(
 
 // Citizen / Officer → get own complaints
 router.get("/", verifyJWT, getComplaints);
+
+router.get("/admin/all", verifyJWT, checkRole("DEPT_HEAD"), getAllComplaints);
 
 // Get complaint by ID with access control
 router.get("/:id", verifyJWT, getComplaintById);
@@ -105,5 +109,6 @@ router.post(
   checkRole("CITIZEN"),
   submitFeedback
 );
+
 
 export default router;

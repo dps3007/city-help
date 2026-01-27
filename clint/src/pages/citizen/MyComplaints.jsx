@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
+import dayjs from "dayjs";
 import { getMyComplaints } from "../../services/complaint.service";
-import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-
 
 function MyComplaints() {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchComplaints = async () => {
@@ -38,12 +36,14 @@ function MyComplaints() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600">
             <tr>
-              <th className="px-6 py-3 text-left">ID</th>
-              <th className="px-6 py-3 text-left">Category</th>
-              <th className="px-6 py-3 text-left">Status</th>
-              <th className="px-6 py-3 text-left">Upvotes</th>
-              <th className="px-6 py-3 text-left">Created</th>
-              <th className="px-6 py-3 text-left">View</th>
+              <th className="px-4 py-3 text-left">ID</th>
+              <th className="px-4 py-3 text-left">Category</th>
+              <th className="px-4 py-3 text-left">Status</th>
+              <th className="px-4 py-3 text-left">Upvotes</th>
+              <th className="px-4 py-3 text-left">Assigned To</th>
+              <th className="px-4 py-3 text-left">Created</th>
+              <th className="px-4 py-3 text-left">Resolved On</th>
+              <th className="px-4 py-3 text-left">View</th>
             </tr>
           </thead>
 
@@ -51,7 +51,7 @@ function MyComplaints() {
             {complaints.length === 0 && (
               <tr>
                 <td
-                  colSpan="6"
+                  colSpan="8"
                   className="px-6 py-6 text-center text-gray-500"
                 >
                   No complaints found
@@ -59,31 +59,50 @@ function MyComplaints() {
               </tr>
             )}
 
-            {complaints.map((complaint) => (
+            {complaints.map((c) => (
               <tr
-                key={complaint._id}
+                key={c._id}
                 className="border-t hover:bg-gray-50"
               >
-                <td className="px-6 py-3">
-                  {complaint._id.slice(-6)}
+                <td className="px-4 py-3">
+                  {c._id.slice(-6)}
                 </td>
-                <td className="px-6 py-3">
-                  {complaint.category}
+
+                <td className="px-4 py-3">
+                  {c.category}
                 </td>
-                <td className="px-6 py-3">
-                  <StatusBadge status={complaint.status} />
+
+                <td className="px-4 py-3">
+                  <StatusBadge status={c.status} />
                 </td>
-                <td className="px-6 py-3">
-                  {complaint.upvotes || 0}
+
+                <td className="px-4 py-3">
+                  {c.upvotes?.length || 0}
                 </td>
-                <td className="px-6 py-3">
-                  {new Date(
-                    complaint.createdAt
-                  ).toLocaleDateString()}
+
+                <td
+                  className={`px-4 py-3 ${
+                    !c.assignedTo ? "text-red-500" : ""
+                  }`}
+                >
+                  {c.assignedTo?.name || "Unassigned"}
                 </td>
-                <td className="px-6 py-3">
+
+                <td className="px-4 py-3">
+                  {dayjs(c.createdAt).format("DD MMM YYYY")}
+                </td>
+
+                <td className="px-4 py-3">
+                  {c.resolvedAt
+                    ? dayjs(c.resolvedAt).format(
+                        "DD MMM YYYY"
+                      )
+                    : "—"}
+                </td>
+
+                <td className="px-4 py-3">
                   <Link
-                    to={`/complaints/${complaint._id}`}
+                    to={`/complaints/${c._id}`}
                     className="text-blue-600 hover:underline"
                   >
                     View
@@ -98,6 +117,7 @@ function MyComplaints() {
   );
 }
 
+/* ===== STATUS BADGE (SAME AS ADMIN, READ-ONLY) ===== */
 function StatusBadge({ status }) {
   const colors = {
     SUBMITTED: "bg-gray-200 text-gray-700",
@@ -106,6 +126,7 @@ function StatusBadge({ status }) {
     IN_PROGRESS: "bg-orange-100 text-orange-700",
     RESOLVED: "bg-green-100 text-green-700",
     CLOSED: "bg-green-200 text-green-800",
+    REJECTED: "bg-red-100 text-red-700",
   };
 
   return (

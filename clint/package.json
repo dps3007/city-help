@@ -13,6 +13,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.16",
     "axios": "^1.13.1",
+    "dayjs": "^1.11.19",
     "i18next": "^25.6.0",
     "leaflet": "^1.9.4",
     "mapbox-gl": "^3.18.1",

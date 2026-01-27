@@ -29,7 +29,7 @@ function App() {
 
   return (
     <Routes>
-      {/* NOT AUTHENTICATED */}
+      {/* ================= NOT AUTHENTICATED ================= */}
       {!isAuthenticated ? (
         <>
           <Route path="/login" element={<Login />} />
@@ -42,8 +42,9 @@ function App() {
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="/register" element={<Navigate to="/" replace />} />
 
-          {/* 🟢 CITIZEN LAYOUT */}
+          {/* ================= COMMON LAYOUT ================= */}
           <Route element={<DashboardLayout />}>
+            {/* ROOT DASHBOARD */}
             <Route
               index
               element={
@@ -55,11 +56,14 @@ function App() {
               }
             />
 
+            {/* 🔥 COMMON COMPLAINT DETAIL (CITIZEN + ADMIN) */}
+            <Route path="complaints/:id" element={<ComplaintDetail />} />
+
+            {/* ================= CITIZEN ROUTES ================= */}
             {user.role === "CITIZEN" && (
               <>
                 <Route path="complaints/new" element={<FileComplaint />} />
                 <Route path="complaints" element={<MyComplaints />} />
-                <Route path="complaints/:id" element={<ComplaintDetail />} />
                 <Route path="rewards" element={<Rewards />} />
                 <Route
                   path="rewards/history"
@@ -68,19 +72,19 @@ function App() {
               </>
             )}
 
+            {/* ================= COMMON ================= */}
             <Route path="leaderboard" element={<Leaderboard />} />
           </Route>
 
-          {/* 🔵 ADMIN LAYOUT (THIS WAS MISSING BEFORE) */}
+          {/* ================= ADMIN ROUTES ================= */}
           <Route path="/admin" element={<DashboardLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
-            
             <Route path="complaints" element={<ManageComplaints />} />
-            <Route path="complaints/:id" element={<ComplaintDetail />} />
           </Route>
-      
+
+          {/* fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </>
       )}
