@@ -87,23 +87,17 @@ export const manageUser = asyncHandler(async (req, res) => {
   if (!role || typeof role !== "string") {
     throw new ApiError(400, "Role is required");
   }
+  if (!ROLE_LEVEL.hasOwnProperty  (role)) {
+    throw new ApiError(400, "Invalid role");
+  }
 
-  role = role.trim().toUpperCase(); // 🔥 FIX
-
-  console.log("LOGGED IN:", req.user.role);
-  console.log("TARGET:", userId, "NEW ROLE:", role);
-  console.log("RAW ROLE FROM BODY:", req.body.role, typeof req.body.role);
-console.log("ROLE_LEVEL KEYS:", Object.keys(ROLE_LEVEL));
-
-
+  role = role.trim().toUpperCase(); 
   if (!(role in ROLE_LEVEL)) {
     throw new ApiError(400, "Invalid role");
   }
  
-
-
   const targetUser = await User.findById(userId);
-  console.log("TARGET USER CURRENT ROLE:", targetUser.role);
+  
   if (!targetUser) {
     throw new ApiError(404, "User not found");
   }
@@ -111,10 +105,6 @@ console.log("ROLE_LEVEL KEYS:", Object.keys(ROLE_LEVEL));
   const currentUserLevel = ROLE_LEVEL[req.user.role];
   const targetUserLevel = ROLE_LEVEL[targetUser.role];
   const newRoleLevel = ROLE_LEVEL[role];
-
-  console.log("CURRENT USER LEVEL:", currentUserLevel);
-  console.log("TARGET USER LEVEL:", targetUserLevel);
-  console.log("NEW ROLE LEVEL:", newRoleLevel);
 
 
   if (targetUserLevel >= currentUserLevel) {
@@ -224,6 +214,21 @@ export const getAllUsers = asyncHandler(async (req, res) => {
 export const createUser = asyncHandler(async (req, res) => {
   const { name, email, role, department } = req.body;
 
+  console.log("Create User Request Body:", req.body);
+  console.log("department:", department);
+  
+
+  if (role === "DEPT_HEAD" && !department) {
+    throw new ApiError(400, "Department is required for Dept Head");
+  } 
+
+  console.log("Validated role:", role);
+
+  if (!ROLE_LEVEL.hasOwnProperty(role)) {
+  throw new ApiError(400, "Invalid role");
+}
+
+
   if (!name || !email || !role) {
     throw new ApiError(400, "Required fields missing");
   }
@@ -234,6 +239,9 @@ export const createUser = asyncHandler(async (req, res) => {
 
   const creatorLevel = ROLE_LEVEL[req.user.role];
   const newUserLevel = ROLE_LEVEL[role];
+
+  console.log("Creator Level:", creatorLevel);
+  console.log("New User Level:", newUserLevel);
 
   if (newUserLevel >= creatorLevel) {
     throw new ApiError(403, "Cannot create equal or higher role");
@@ -246,6 +254,8 @@ export const createUser = asyncHandler(async (req, res) => {
 
   const tempPassword = "Welcome@123";
 
+  console.log("Creating user with email:", email);
+  console.log("Assigned department:", department);
   const user = await User.create({
     name,
     email,
@@ -255,6 +265,8 @@ export const createUser = asyncHandler(async (req, res) => {
     password: tempPassword,
     isActive: true,
   });
+
+  console.log("User created:", user._id);
 
   await sendEmail({
     email: user.email,

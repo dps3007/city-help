@@ -67,9 +67,16 @@ const userSchema = new Schema(
     },
 
     municipalId: {
-      type: String, // or ObjectId if you have Municipal model
-      required: true,
+      type: String, 
+      required: false,
       index: true,
+    },
+
+    department: {
+    type: String,
+      required: function () {
+        return this.role === "DEPT_HEAD";
+      },
     },
 
     communityPoints: {
