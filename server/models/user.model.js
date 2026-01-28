@@ -73,9 +73,17 @@ const userSchema = new Schema(
     },
 
     department: {
-    type: String,
+      type: String,
+      enum: [
+        "GARBAGE",
+        "ROADS",
+        "WATER",
+        "STREETLIGHT",
+        "ELECTRICITY",
+        "OTHER",
+      ],
       required: function () {
-        return this.role === "DEPT_HEAD";
+        return ["DEPT_HEAD", "OFFICER"].includes(this.role);
       },
     },
 

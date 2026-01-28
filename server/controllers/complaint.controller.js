@@ -11,7 +11,17 @@ import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 
 
 export const getAllComplaints = asyncHandler(async (req, res) => {
-  const complaints = await Complaint.find()
+
+  const { department } = req.query;
+
+  const filter = {};
+
+  // 🔥 department-wise filter
+  if (department) {
+    filter.category = department;
+  }
+
+  const complaints = await Complaint.find(filter)
     .populate("citizen", "name email")
     .populate("verifiedBy", "name email role")
     .populate("assignedTo", "name email role")

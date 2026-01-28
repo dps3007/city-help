@@ -55,8 +55,12 @@ export const getComplaintById = async (id) => {
   return res.data.data;
 };
 
-export const getAllAdminComplaints = async () => {
-  const res = await api.get("/complaints/admin/all");
+export const getAllAdminComplaints = async (department) => {
+  const url = department
+    ? `/complaints/admin/all?department=${department}`
+    : `/complaints/admin/all`;
+
+  const res = await api.get(url);
   return res.data;
 };
 

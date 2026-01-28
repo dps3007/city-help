@@ -25,16 +25,6 @@ export const ADMIN_MENU = [
     ],
   },
   {
-    label: "Departments",
-    path: "/admin/departments",
-    roles: ["SUPER_ADMIN", "CENTRAL_ADMIN"],
-  },
-  {
-    label: "Reports",
-    path: "/admin/reports",
-    roles: ["SUPER_ADMIN", "CENTRAL_ADMIN", "STATE_ADMIN", "DISTRICT_ADMIN"],
-  },
-  {
     label: "Admins",
     path: "/admin/users",
     roles: ["SUPER_ADMIN", "CENTRAL_ADMIN", "STATE_ADMIN", "DISTRICT_ADMIN"],
