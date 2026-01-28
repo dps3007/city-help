@@ -30,7 +30,6 @@ export const getAllComplaints = asyncHandler(async (req, res) => {
   res.status(200).json(complaints);
 });
 
-
 // Create a new complaint
 export const createComplaint = asyncHandler(async (req, res) => {
   const { category, description, location: locationStr } = req.body;
@@ -74,7 +73,6 @@ export const createComplaint = asyncHandler(async (req, res) => {
     })
   );
 });
-
 
 // Get complaints for current user (citizen or officer)
 export const getComplaints = asyncHandler(async (req, res) => {

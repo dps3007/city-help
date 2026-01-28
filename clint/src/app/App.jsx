@@ -21,6 +21,8 @@ import AdminUsers from "../pages/admin/AdminUsers";
 
 // Common
 import Leaderboard from "../pages/leaderboard/Leaderboard";
+import Profile from "../pages/Profile";
+
 
 function App() {
   const { isAuthenticated, loading, user } = useAuth();
@@ -74,6 +76,8 @@ function App() {
 
             {/* ================= COMMON ================= */}
             <Route path="leaderboard" element={<Leaderboard />} />
+            <Route path="profile" element={<Profile />} />
+
           </Route>
 
           {/* ================= ADMIN ROUTES ================= */}

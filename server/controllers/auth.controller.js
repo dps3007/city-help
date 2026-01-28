@@ -69,20 +69,18 @@ export const login = asyncHandler(async (req, res) => {
 
   user.refreshTokens.push(refreshToken);
   await user.save({ validateBeforeSave: false });
-  
+
+  // 🔥 IMPORTANT: fetch fresh user WITHOUT password
+  const safeUser = await User.findById(user._id).select("-password");
+
   return res.status(200).json(
     new ApiResponse({
       message: "Login successful",
-      data: { 
-        user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
+      data: {
+        user: safeUser,        // ✅ FULL DB USER
+        accessToken,
+        refreshToken,
       },
-      accessToken,
-      refreshToken 
-      }, 
     })
   );
 });

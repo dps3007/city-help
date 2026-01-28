@@ -4,13 +4,24 @@ import {
   getCurrentUser,
   updateCurrentUser,
   getMyAllComplaints,
-  getMyComplaintById
+  getMyComplaintById,
+  updateAvatar 
 } from "../controllers/user.controller.js";
+import upload from "../middlewares/upload.middleware.js";
 
 const router = Router();
 
 // get current user
 router.get("/me", verifyJWT, getCurrentUser);
+
+//update avtar
+router.patch(
+  "/me/avatar",
+  verifyJWT,
+  upload.single("avatar"), 
+  updateAvatar
+);
+
 
 // update user
 router.patch("/me", verifyJWT, updateCurrentUser);

@@ -3,11 +3,52 @@ import Complaint from "../models/complaint.model.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
+
+//updateAvtar
+export const updateAvatar = asyncHandler(async (req, res) => {
+  const file = req.file;
+  
+
+  if (!file) {
+    throw new ApiError(400, "Profile image is required");
+  }
+
+  // 🔥 SAME AS COMPLAINT
+  const result = await uploadToCloudinary(file.buffer);
+
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  user.avatar.url = result.secure_url;
+  user.avatar.localPath = ""; // optional
+  await user.save();
+
+  return res.status(200).json(
+    new ApiResponse({
+      message: "Profile photo updated successfully",
+      data: {
+        user,
+      },
+    })
+  );
+});
 
 // Get current logged-in user details
 export const getCurrentUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password");
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
   return res.status(200).json(
-    new ApiResponse({ data: { user: req.user }, message: "Current user fetched successfully" })
+    new ApiResponse({
+      data: { user },
+      message: "Current user fetched successfully",
+    })
   );
 });
 

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-const AuthContext = createContext(undefined);
+const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -8,20 +8,21 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedToken = localStorage.getItem("cityhelp_token");
-      const storedUser = localStorage.getItem("cityhelp_user");
+  try {
+    const storedToken = localStorage.getItem("cityhelp_token");
+    const storedUser = localStorage.getItem("cityhelp_user");
 
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-      }
-    } catch (err) {
-      console.error("Auth load failed", err);
-    } finally {
-      setLoading(false);
+    if (storedToken && storedUser && storedUser !== "undefined") {
+      setToken(storedToken);
+      setUser(JSON.parse(storedUser));
     }
-  }, []);
+  } catch (err) {
+    console.error("Auth load failed", err);
+    localStorage.removeItem("cityhelp_user");
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
   const login = ({ token, user }) => {
     localStorage.setItem("cityhelp_token", token);
@@ -30,11 +31,22 @@ export function AuthProvider({ children }) {
     setUser(user);
   };
 
+  const updateUser = (updatedUser) => {
+  if (!updatedUser) return; // 🛑 VERY IMPORTANT
+
+  localStorage.setItem(
+    "cityhelp_user",
+    JSON.stringify(updatedUser)
+  );
+  setUser(updatedUser);
+};
+
+
   const logout = () => {
-    localStorage.removeItem("cityhelp_token");
-    localStorage.removeItem("cityhelp_user");
-    setToken(null);
+    localStorage.clear();
     setUser(null);
+    setToken(null);
+    window.location.href = "/login";
   };
 
   return (
@@ -43,9 +55,10 @@ export function AuthProvider({ children }) {
         user,
         token,
         loading,
-        isAuthenticated: Boolean(token),
+        isAuthenticated: !!token,
         login,
         logout,
+        updateUser, // 🔥 IMPORTANT
       }}
     >
       {children}
@@ -53,10 +66,4 @@ export function AuthProvider({ children }) {
   );
 }
 
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
-  return ctx;
-}
+export const useAuth = () => useContext(AuthContext);

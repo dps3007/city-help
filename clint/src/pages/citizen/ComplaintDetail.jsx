@@ -167,6 +167,11 @@ function ComplaintDetail() {
         <h2 className="text-lg font-semibold mb-3">Location</h2>
 
           <p className="text-gray-700">
+            {complaint.location?.localAddress && (
+            <>
+              {complaint.location.localAddress},{" "}
+            </>
+            )}
             {complaint.location.city}, {complaint.location.state}
           </p>
             {complaint.location?.coordinates && (

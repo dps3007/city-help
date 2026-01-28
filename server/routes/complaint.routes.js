@@ -1,5 +1,4 @@
 import { Router } from "express";
-import multer from "multer";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { checkRole } from "../middlewares/role.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
@@ -18,23 +17,9 @@ import {
   upvoteComplaint,
   submitFeedback,
 } from "../controllers/complaint.controller.js";
+import upload from "../middlewares/upload.middleware.js";
 
 const router = Router();
-
-// Configure multer for file uploads
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only image files are allowed"));
-    }
-  },
-});
-
 
 // Citizen → create complaint
 router.post(

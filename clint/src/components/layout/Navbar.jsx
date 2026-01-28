@@ -41,9 +41,20 @@ function Navbar() {
 
         {/* User Avatar */}
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-semibold">
-            {user?.name?.[0] || "U"}
+          <div className="h-8 w-8  rounded-full overflow-hidden border">
+            {user?.avatar?.url ? (
+              <img
+                src={user.avatar.url}
+                alt="Avatar"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-blue-600 text-white text-sm font-semibold">
+                {user?.name?.[0]?.toUpperCase() || "U"}
+              </div>
+            )}
           </div>
+
           <button
             onClick={logout}
             className="text-sm text-red-600 hover:underline"
