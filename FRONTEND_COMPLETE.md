@@ -226,7 +226,7 @@ Complaint resolved → Status = "RESOLVED"
 
 ### Development:
 ```bash
-npm run dev          # Runs on http://localhost:5174
+npm run dev          # Runs on http://localhost:5173
 ```
 
 ### Production Build:
@@ -332,8 +332,8 @@ Future improvements can include:
 The CityHelp Frontend is **fully functional, tested, and ready for production deployment**.
 
 **Start Date**: Jan 22, 2026  
-**Completion**: Jan 22, 2026  
-**Status**: ✅ COMPLETE  
+**Completion**: Jan 31, 2026  
+**Status**: ✅ In Progress 
 
 ---
 
