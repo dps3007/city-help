@@ -59,13 +59,24 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       };
       break;
 
-
     case "OFFICER":
-      complaintFilter.assignedTo = _id;
+      complaintFilter.category = {
+        $regex: `^${department}$`,
+        $options: "i",
+      };
+      complaintFilter.$or = [
+        { assignedTo: _id },
+      ];
       break;
 
     case "WORKER":
-      complaintFilter.assignedWorker = _id;
+      complaintFilter.category = {
+        $regex: `^${department}$`,
+        $options: "i",
+      };
+      complaintFilter.$or = [
+        { assignedWorker: _id },
+      ];
       break;
 
     default:
@@ -102,8 +113,6 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     })
   );
 });
-
-
 
 // update user role with proper checks
 export const manageUser = asyncHandler(async (req, res) => {

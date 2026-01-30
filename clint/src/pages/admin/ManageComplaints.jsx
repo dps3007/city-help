@@ -120,53 +120,63 @@ function ManageComplaints() {
   /* ---------------- FILTERING (ROLE + CATEGORY + LOCATION) ---------------- */
 
   const filteredComplaints = complaints.filter((c) => {
-  const userState = normalize(user?.location?.state);
-  const userDistrict = normalize(user?.location?.district);
-  const userDepartment = user?.department; // ✅ correct
+    const userState = normalize(user?.location?.state);
+    const userDistrict = normalize(user?.location?.district);
+    const userDepartment = normalize(user?.department);
 
-  const complaintState = normalize(c?.location?.state);
-  const complaintDistrict = normalize(c?.location?.district);
-  const complaintCategory = c?.category; // ✅ correct
+    const complaintState = normalize(c?.location?.state);
+    const complaintDistrict = normalize(c?.location?.district);
+    const complaintCategory = normalize(c?.category);
 
-  /* ---------- STATE ADMIN ---------- */
-  if (role === "STATE_ADMIN") {
-    if (
-      userState !== "unknown" &&
-      complaintState !== userState
-    ) {
-      return false;
+  // SUPER / CENTRAL 
+    if (["SUPER_ADMIN", "CENTRAL_ADMIN"].includes(role)) { return true; }  
+
+    /* ---------- STATE ADMIN ---------- */
+    if (role === "STATE_ADMIN") {
+      return complaintState === userState;
     }
-  }
 
-  /* ---------- DISTRICT ADMIN ---------- */
-  if (role === "DISTRICT_ADMIN") {
-    if (
-      complaintState !== userState ||
-      complaintDistrict !== userDistrict
-    ) {
-      return false;
+    /* ---------- DISTRICT ADMIN ---------- */
+    if (role === "DISTRICT_ADMIN") {
+      return (
+        complaintState === userState &&
+        complaintDistrict === userDistrict
+      );
     }
-  }
 
-  /* ---------- DEPT_HEAD / OFFICER / WORKER ---------- */
-  if (["DEPT_HEAD", "OFFICER", "WORKER"].includes(role)) {
-    if (
-      complaintDistrict !== userDistrict ||               // district match
-      complaintCategory !== userDepartment                // 🔥 FIX
-    ) {
-      return false;
+    /* ---------- DEPT_HEAD ---------- */
+    if (role === "DEPT_HEAD") {
+      return (
+        complaintDistrict === userDistrict &&
+        complaintCategory === userDepartment
+      );
     }
-  }
 
-  /* ---------- SEARCH ---------- */
-  const q = search.toLowerCase();
+    /* ---------- OFFICER ---------- */
+    if (role === "OFFICER") {
+      return (
+        complaintCategory === userDepartment &&
+        (
+          c.assignedTo?._id === user._id ||
+          c.resolvedBy === user._id
+        )
+      );
+    }
 
-  return (
-    c._id.toLowerCase().includes(q) ||
-    c.category?.toLowerCase().includes(q) ||
-    c.status?.toLowerCase().includes(q)
-  );
-});
+    /* ---------- WORKER ---------- */
+    if (role === "WORKER") {
+      return (
+        complaintCategory === userDepartment &&
+        (
+          c.assignedWorker?._id === user._id ||
+          c.resolvedBy === user._id
+        )
+      );
+    }
+
+    return false;
+  });
+
 
   /* ---------------- PAGINATION ---------------- */
 

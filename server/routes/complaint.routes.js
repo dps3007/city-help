@@ -34,7 +34,7 @@ router.post(
 // Citizen / Officer → get own complaints
 router.get("/", verifyJWT, getComplaints);
 
-router.get("/admin/all", verifyJWT, checkRole("DEPT_HEAD"), getAllComplaints);
+router.get("/admin/all", verifyJWT, checkRole("OFFICER"), getAllComplaints);
 
 // Get complaint by ID with access control
 router.get("/:id", verifyJWT, getComplaintById);

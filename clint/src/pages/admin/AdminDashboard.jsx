@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getDashboardStats } from "../../services/admin.service";
 import { getAllAdminComplaints } from "../../services/complaint.service";
 import { useRole } from "../../hooks/useRole";
@@ -8,12 +9,24 @@ import DepartmentComplaintsDrawer from "./DepartmentComplaintsDrawer";
 /* ---------------- helpers ---------------- */
 
 const normalize = (v) =>
-  typeof v === "string" && v.trim() ? v.trim().toLowerCase() : "unknown";
+  typeof v === "string" && v.trim()
+    ? v.trim().toLowerCase()
+    : "unknown";
 
 const formatLabel = (v) =>
   v === "unknown"
     ? "Unknown"
     : v.replace(/\b\w/g, (c) => c.toUpperCase());
+
+const STATUS_STYLES = {
+  SUBMITTED: "bg-gray-100 text-gray-700 border-gray-300",
+  VERIFIED: "bg-blue-100 text-blue-700 border-blue-300",
+  ASSIGNED: "bg-yellow-100 text-yellow-700 border-yellow-300",
+  IN_PROGRESS: "bg-orange-100 text-orange-700 border-orange-300",
+  RESOLVED: "bg-green-100 text-green-700 border-green-300",
+  CLOSED: "bg-purple-100 text-purple-700 border-purple-300",
+};
+
 
 /* ---------------- component ---------------- */
 
@@ -61,43 +74,62 @@ function AdminDashboard() {
     return <p className="text-gray-600">Loading admin dashboard...</p>;
   }
 
-  /* ---------------- ROLE + CATEGORY FILTER ---------------- */
+  /* ---------------- ROLE-BASED FILTER ---------------- */
 
- const visibleComplaints = complaints.filter((c) => {
-  const cState = normalize(c.location?.state);
-  const cDistrict = normalize(c.location?.district);
-  const cCategory = normalize(c.category);          
+  const visibleComplaints = complaints.filter((c) => {
+    const cState = normalize(c.location?.state);
+    const cDistrict = normalize(c.location?.district);
+    const cCategory = normalize(c.category);
 
-  const uState = normalize(user?.location?.state);
-  const uDistrict = normalize(user?.location?.district);
-  const uDepartment = normalize(user?.department);   
-  // SUPER / CENTRAL
-  if (["SUPER_ADMIN", "CENTRAL_ADMIN"].includes(role)) {
-    return true;
-  }
+    const uState = normalize(user?.location?.state);
+    const uDistrict = normalize(user?.location?.district);
+    const uDepartment = normalize(user?.department);
 
-  // STATE ADMIN
-  if (role === "STATE_ADMIN") {
-    return cState === uState;
-  }
+    if (["SUPER_ADMIN", "CENTRAL_ADMIN"].includes(role)) return true;
 
-  // DISTRICT ADMIN
-  if (role === "DISTRICT_ADMIN") {
-    return cState === uState && cDistrict === uDistrict;
-  }
+    if (role === "STATE_ADMIN") {
+      return cState === uState;
+    }
 
-  // ✅ DEPT_HEAD / OFFICER / WORKER (FINAL FIX)
-  if (["DEPT_HEAD", "OFFICER", "WORKER"].includes(role)) {
-    
-    return (
-      cState === uState && 
-      cDistrict === uDistrict &&
-      cCategory === uDepartment
-    );
-  }
+    if (role === "DISTRICT_ADMIN") {
+      return cState === uState && cDistrict === uDistrict;
+    }
 
-  return false;
-});
+    if (role === "DEPT_HEAD") {
+      return (
+        cDistrict === uDistrict &&
+        cCategory === uDepartment
+      );
+    }
+
+    if (role === "OFFICER") {
+      return (
+        cCategory === uDepartment &&
+        (
+          c.assignedTo === user._id ||
+          c.assignedTo?._id === user._id
+        )
+      );
+    }
+
+
+    return false;
+  });
+
+  /* ---------------- RECENT OFFICER COMPLAINTS ---------------- */
+
+const recentOfficerComplaints =
+  role === "OFFICER"
+    ? [...visibleComplaints]
+        .sort(
+          (a, b) =>
+            new Date(b.updatedAt || b.createdAt) -
+            new Date(a.updatedAt || a.createdAt)
+        )
+        .slice(0, 5)
+    : [];
+
+
 
 
   /* ---------------- GROUPING ---------------- */
@@ -163,15 +195,15 @@ function AdminDashboard() {
     <div className="space-y-8">
       <div>
         <h2 className="text-xl font-semibold">Admin Dashboard</h2>
-      <p className="text-sm text-gray-500">
-        Role: <b>{role}</b>
-        {["DEPT_HEAD", "OFFICER", "WORKER"].includes(role) && user?.department && (
-          <span className="ml-2">
-            | Department: <b>{user.department}</b>
-          </span>
-        )}
-      </p>
-
+        <p className="text-sm text-gray-500">
+          Role: <b>{role}</b>
+          {["DEPT_HEAD", "OFFICER", "WORKER"].includes(role) &&
+            user?.department && (
+              <span className="ml-2">
+                | Department: <b>{user.department}</b>
+              </span>
+            )}
+        </p>
       </div>
 
       {/* Metrics */}
@@ -181,6 +213,54 @@ function AdminDashboard() {
         <Metric title="Resolved" value={stats?.resolvedComplaints || 0} />
         <Metric title="Closed" value={stats?.closedComplaints || 0} />
       </div>
+    
+
+      {/* Officer Recent Complaints */}
+      {role === "OFFICER" && (
+        <div className="bg-white rounded shadow-sm p-4">
+          <h3 className="font-semibold text-gray-800 mb-3">
+            My Recent Complaints
+          </h3>
+
+          {recentOfficerComplaints.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No complaints assigned to you yet.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {recentOfficerComplaints.map((c) => (
+                <div
+                  key={c._id}
+                  className="flex justify-between items-center border rounded-lg px-4 py-3"
+                >
+                  {/* LEFT */}
+                  <div>
+                    <p className="font-medium text-sm">
+                      #{c._id.slice(-6)} · {c.category}
+                    </p>
+
+                    <span
+                      className={`inline-block mt-1 px-2 py-0.5 text-xs rounded border ${
+                        STATUS_STYLES[c.status] || "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {c.status}
+                    </span>
+                  </div>
+
+                  {/* RIGHT */}
+                  <Link
+                    to={`/complaints/${c._id}`}
+                    className="text-blue-600 text-sm hover:underline"
+                  >
+                    View
+                  </Link>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Department */}
       {hasGroups(departmentGroups) && (

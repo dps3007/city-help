@@ -58,6 +58,15 @@ if (role === "STATE_ADMIN") {
     };
   }
 
+  if (role === "OFFICER") {
+  filter.category = {
+    $regex: `^${req.user.department}$`,
+    $options: "i",
+  };
+  filter.assignedTo = req.user._id;
+}
+
+
   const complaints = await Complaint.find(filter)
     .populate("citizen", "name email")
     .populate("verifiedBy", "name email role")
