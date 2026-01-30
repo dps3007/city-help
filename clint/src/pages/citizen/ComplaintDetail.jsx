@@ -171,7 +171,7 @@ function ComplaintDetail() {
             <>
               {complaint.location.localAddress},{" "}
             </>
-            )}
+          )}
             {complaint.location.city}, {complaint.location.state}
           </p>
             {complaint.location?.coordinates && (

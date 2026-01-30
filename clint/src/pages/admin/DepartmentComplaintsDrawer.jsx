@@ -13,36 +13,27 @@ const PENDING_STATUSES = [
 ];
 
 function DepartmentComplaintsDrawer({
-  department,
-  complaints,
+  department,      // only for title
+  complaints,      // 🔥 already filtered list
   onClose,
 }) {
   const navigate = useNavigate();
   const [status, setStatus] = useState("ALL");
   const [page, setPage] = useState(1);
 
-  /* ---------- ALWAYS RUN HOOKS ---------- */
-
-  const deptComplaints = useMemo(() => {
-    if (!department) return [];
-    return complaints.filter(
-      (c) =>
-        c.category?.toUpperCase() ===
-        department?.toUpperCase()
-    );
-  }, [complaints, department]);
+  /* ---------- STATUS FILTER ONLY ---------- */
 
   const filtered = useMemo(() => {
-    if (status === "ALL") return deptComplaints;
+    if (status === "ALL") return complaints;
+
     if (status === "PENDING") {
-      return deptComplaints.filter((c) =>
+      return complaints.filter((c) =>
         PENDING_STATUSES.includes(c.status)
       );
     }
-    return deptComplaints.filter(
-      (c) => c.status === status
-    );
-  }, [deptComplaints, status]);
+
+    return complaints.filter((c) => c.status === status);
+  }, [complaints, status]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
 
@@ -51,7 +42,6 @@ function DepartmentComplaintsDrawer({
     page * PAGE_SIZE
   );
 
-  /* ---------- CONDITIONAL RETURN AFTER HOOKS ---------- */
   if (!department) return null;
 
   return (
@@ -67,7 +57,7 @@ function DepartmentComplaintsDrawer({
         {/* header */}
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <h3 className="font-semibold">
-            {department} Complaints
+            {department}
           </h3>
           <button
             onClick={onClose}
@@ -77,7 +67,7 @@ function DepartmentComplaintsDrawer({
           </button>
         </div>
 
-        {/* filters */}
+        {/* status filters */}
         <div className="px-4 py-3 border-b flex gap-2 flex-wrap">
           {STATUS_FILTERS.map((s) => (
             <button

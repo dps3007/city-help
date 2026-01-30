@@ -54,27 +54,39 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
 
 // Update current logged-in user profile
 export const updateCurrentUser = asyncHandler(async (req, res) => {
-  const { name, email } = req.body;
+  const { name, email, state, district, city } = req.body;
 
   // ❌ nothing provided
-  if (!name && !email) {
-    throw new ApiError(400, "Please provide name or email");
+  if (
+    name === undefined &&
+    email === undefined &&
+    state === undefined &&
+    district === undefined &&
+    city === undefined
+  ) {
+    throw new ApiError(
+      400,
+      "Please provide at least one field to update"
+    );
   }
 
   const updateFields = {};
 
-  // ✅ name (optional)
+  /* ---------- name ---------- */
   if (name !== undefined) {
     if (!name.trim() || name.trim().length < 2) {
-      throw new ApiError(400, "Name must be at least 2 characters long");
+      throw new ApiError(
+        400,
+        "Name must be at least 2 characters long"
+      );
     }
     updateFields.name = name.trim();
   }
 
-  // ✅ email (optional)
+  /* ---------- email ---------- */
   if (email !== undefined) {
     const existingUser = await User.findOne({
-      email,
+      email: email.toLowerCase(),
       _id: { $ne: req.user._id },
     });
 
@@ -83,8 +95,22 @@ export const updateCurrentUser = asyncHandler(async (req, res) => {
     }
 
     updateFields.email = email.toLowerCase();
-    // optional (if you have verification)
-    // updateFields.isVerified = false;
+  }
+
+  /* ---------- location (🔥 FIXED & NESTED) ---------- */
+  if (state !== undefined) {
+    updateFields["location.state"] =
+      state?.trim().toLowerCase() || null;
+  }
+
+  if (district !== undefined) {
+    updateFields["location.district"] =
+      district?.trim().toLowerCase() || null;
+  }
+
+  if (city !== undefined) {
+    updateFields["location.city"] =
+      city?.trim().toLowerCase() || null;
   }
 
   const updatedUser = await User.findByIdAndUpdate(
@@ -96,14 +122,16 @@ export const updateCurrentUser = asyncHandler(async (req, res) => {
   if (!updatedUser) {
     throw new ApiError(404, "User not found");
   }
+  console.log(updatedUser);
 
   return res.status(200).json(
     new ApiResponse({
       data: { user: updatedUser },
-      message: "Profile updated successfully"
+      message: "Profile updated successfully",
     })
   );
 });
+
 
 // Get all complaints of the logged-in user
 export const getMyAllComplaints = asyncHandler(async (req, res) => {

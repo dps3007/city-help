@@ -12,3 +12,8 @@ export const updateAvatar = async (file) => {
 
   return res.data;
 };
+
+export const updateCurrentUser = async (payload) => {
+  const res = await api.patch("/users/me", payload);
+  return res.data;
+};

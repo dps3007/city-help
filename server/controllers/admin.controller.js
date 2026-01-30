@@ -9,38 +9,55 @@ import { ROLE_LEVEL } from '../middlewares/role.middleware.js';
 
 // DASHBOARD STATS 
 export const getDashboardStats = asyncHandler(async (req, res) => {
-  const role = req.user.role;
+  res.set("Cache-Control", "no-store");
+
+  const { role, location, department, _id } = req.user;
 
   let complaintFilter = {};
   let userFilter = {};
 
   switch (role) {
     case "SUPER_ADMIN":
-      break;
-
     case "CENTRAL_ADMIN":
+      // no filter
       break;
 
     case "STATE_ADMIN":
-      complaintFilter["location.state"] = req.user.state;
-      userFilter.state = req.user.state;
+      complaintFilter["location.state"] = {
+        $regex: `^${location.state}$`,
+        $options: "i",
+      };
+      userFilter["location.state"] = {
+        $regex: `^${location.state}$`,
+        $options: "i",
+      };
       break;
 
     case "DISTRICT_ADMIN":
-      complaintFilter["location.district"] = req.user.district;
-      userFilter.district = req.user.district;
+      complaintFilter["location.state"] = {
+        $regex: `^${location.state}$`,
+        $options: "i",
+      };
+      complaintFilter["location.district"] = {
+        $regex: `^${location.district}$`,
+        $options: "i",
+      };
+      userFilter["location.district"] = {
+        $regex: `^${location.district}$`,
+        $options: "i",
+      };
       break;
 
     case "DEPT_HEAD":
-      complaintFilter.department = req.user.department;
+      complaintFilter.category = department;
       break;
 
     case "OFFICER":
-      complaintFilter.assignedTo = req.user._id;
+      complaintFilter.assignedTo = _id;
       break;
 
     case "WORKER":
-      complaintFilter.assignedWorker = req.user._id;
+      complaintFilter.assignedWorker = _id;
       break;
 
     default:
@@ -77,6 +94,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     })
   );
 });
+
 
 
 // update user role with proper checks

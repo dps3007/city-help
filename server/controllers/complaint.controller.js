@@ -13,12 +13,49 @@ import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 export const getAllComplaints = asyncHandler(async (req, res) => {
 
   const { department } = req.query;
+  const { role, location } = req.user;
+
 
   const filter = {};
 
-  // 🔥 department-wise filter
+  // department-wise filter
   if (department) {
     filter.category = department;
+  }
+
+if (role === "STATE_ADMIN") {
+  filter["location.state"] = {
+    $regex: `^${req.user.location.state}$`,
+    $options: "i", // case-insensitive
+  };
+}
+
+  // 🔥 DISTRICT ADMIN
+  if (role === "DISTRICT_ADMIN") {
+    filter["location.state"] = {
+      $regex: `^${location.state}$`,
+      $options: "i",
+    };
+    filter["location.district"] = {
+      $regex: `^${location.district}$`,
+      $options: "i",
+    };
+  }
+
+  // 🔥 CITY ADMIN (future-safe)
+  if (role === "CITY_ADMIN") {
+    filter["location.state"] = {
+      $regex: `^${location.state}$`,
+      $options: "i",
+    };
+    filter["location.district"] = {
+      $regex: `^${location.district}$`,
+      $options: "i",
+    };
+    filter["location.city"] = {
+      $regex: `^${location.city}$`,
+      $options: "i",
+    };
   }
 
   const complaints = await Complaint.find(filter)
@@ -89,6 +126,7 @@ export const getComplaints = asyncHandler(async (req, res) => {
 
   const complaints = await Complaint.find(filter)
     .populate("verifiedBy", "name email role")
+    .populate("assignedTo", "name email role")
     .sort({ createdAt: -1 })
     .limit(50);
 

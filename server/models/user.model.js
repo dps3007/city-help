@@ -55,15 +55,38 @@ const userSchema = new Schema(
       default: null,
     },
 
-    address: String,
-    city: String,
-    district: String,
-    state: String,
-    pincode: String,
+    location: {
+      state: {
+        type: String,
+        trim: true,
+        lowercase: true,
+      },
+      district: {
+        type: String,
+        trim: true,
+        lowercase: true,
+      },
+      city: {
+        type: String,
+        trim: true,
+        lowercase: true,
+      },
+    },
 
-    coordinates: {
-      lat: Number,
-      lng: Number,
+
+    jurisdiction: {
+      state: {
+        type: String,
+        index: true,
+      },
+      district: {
+        type: String,
+        index: true,
+      },
+      city: {
+        type: String,
+        index: true,
+      },
     },
 
     municipalId: {

@@ -1,252 +1,230 @@
 import { useEffect, useState } from "react";
 import {
   getDashboardStats,
-  getAdminComplaints,
 } from "../../services/admin.service";
+import { getAllAdminComplaints } from "../../services/complaint.service";
 import { useRole } from "../../hooks/useRole";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import DepartmentComplaintsDrawer from "./DepartmentComplaintsDrawer";
 
+/* ---------------- helpers ---------------- */
 
-/* ---------------- constants ---------------- */
+const normalize = (v) =>
+  typeof v === "string" && v.trim() ? v.trim().toLowerCase() : "unknown";
 
-const DEPARTMENTS = [
-  "GARBAGE",
-  "ROADS",
-  "WATER",
-  "STREETLIGHT",
-  "ELECTRICITY",
-  "OTHER",
-];
-
-const PENDING_STATUSES = [
-  "SUBMITTED",
-  "VERIFIED",
-  "ASSIGNED",
-  "IN_PROGRESS",
-];
+const formatLabel = (v) =>
+  v === "unknown"
+    ? "Unknown"
+    : v.replace(/\b\w/g, (c) => c.toUpperCase());
 
 /* ---------------- component ---------------- */
 
 function AdminDashboard() {
   const { role } = useRole();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const [openDept, setOpenDept] = useState(null); 
   const [stats, setStats] = useState(null);
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [openGroup, setOpenGroup] = useState(null);
+  const [groupTitle, setGroupTitle] = useState("");
+  const [groupedComplaints, setGroupedComplaints] = useState([]);
+
+  /* ---------------- FETCH ---------------- */
+
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
+        setLoading(true);
         const [statsData, complaintsData] = await Promise.all([
-          getDashboardStats(),      // backend aggregated stats
-          getAdminComplaints(),     // all admin complaints
+          getDashboardStats(),
+          getAllAdminComplaints(),
         ]);
 
-        setStats(statsData);
+        setStats(statsData || null);
         setComplaints(complaintsData || []);
       } catch (err) {
-        console.error("Failed to load admin dashboard", err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboard();
-  }, []);
-
-  /* ---------------- helpers ---------------- */
-
-  const getDepartmentComplaints = (dept) =>
-    complaints.filter((c) => c.category === dept);
-
-  const getStatusCount = (status) =>
-    complaints.filter((c) => c.status === status).length;
-
-  const getPendingCount = (list) =>
-    list.filter((c) => PENDING_STATUSES.includes(c.status)).length;
+  }, [
+    role,
+    user?.location?.state,
+    user?.location?.district,
+    user?.location?.city,
+  ]);
 
   if (loading) {
     return <p className="text-gray-600">Loading admin dashboard...</p>;
   }
 
+  /* ---------------- ROLE FILTER ---------------- */
+
+  const visibleComplaints = complaints.filter((c) => {
+    const cState = normalize(c.location?.state);
+    const cDistrict = normalize(c.location?.district);
+    const cCity = normalize(c.location?.city);
+
+    const uState = normalize(user?.location?.state);
+    const uDistrict = normalize(user?.location?.district);
+    const uCity = normalize(user?.location?.city);
+
+    if (["SUPER_ADMIN", "CENTRAL_ADMIN"].includes(role)) return true;
+    if (role === "STATE_ADMIN") return cState === uState;
+    if (role === "DISTRICT_ADMIN")
+      return cState === uState && cDistrict === uDistrict;
+   
+    return true;
+  });
+
+  /* ---------------- GROUPING ---------------- */
+
+  const groupBy = (list, key) =>
+    list.reduce((acc, item) => {
+      const value =
+        key === "category"
+          ? normalize(item.category)
+          : normalize(item.location?.[key]);
+
+      if (!acc[value]) acc[value] = [];
+      acc[value].push(item);
+      return acc;
+    }, {});
+
+  const departmentGroups = groupBy(visibleComplaints, "category");
+
+  const stateGroups =
+    ["SUPER_ADMIN", "CENTRAL_ADMIN"].includes(role)
+      ? groupBy(visibleComplaints, "state")
+      : {};
+
+  const districtGroups =
+    ["SUPER_ADMIN", "CENTRAL_ADMIN", "STATE_ADMIN"].includes(role)
+      ? groupBy(visibleComplaints, "district")
+      : {};
+
+  const cityGroups =
+    ["SUPER_ADMIN", "CENTRAL_ADMIN", "STATE_ADMIN", "DISTRICT_ADMIN"].includes(
+      role
+    )
+      ? groupBy(visibleComplaints, "city")
+      : {};
+
+  const hasGroups = (obj) => Object.keys(obj).length > 0;
+
+  const GroupSection = ({ title, groups }) => (
+    <div className="bg-white rounded shadow-sm p-4">
+      <h3 className="font-semibold text-gray-800 mb-4">{title}</h3>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {Object.entries(groups).map(([key, list]) => (
+          <div
+            key={key}
+            onClick={() => {
+              setOpenGroup(key);
+              setGroupTitle(`${title}: ${formatLabel(key)}`);
+              setGroupedComplaints(list);
+            }}
+            className="cursor-pointer border rounded p-3 flex justify-between hover:bg-blue-50"
+          >
+            <span>{formatLabel(key)}</span>
+            <span className="font-semibold">{list.length}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  /* ---------------- UI ---------------- */
+
   return (
     <div className="space-y-8">
-      {/* ---------------- Header ---------------- */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-800">
-          Admin Dashboard
-        </h2>
+        <h2 className="text-xl font-semibold">Admin Dashboard</h2>
         <p className="text-sm text-gray-500">
-          Role: <span className="font-medium">{role}</span>
+          Role: <b>{role}</b>
         </p>
       </div>
 
-      {/* ---------------- Overall Metrics ---------------- */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <Metric title="Total Complaints" value={stats.totalComplaints} />
-        <Metric title="Pending" value={stats.pendingComplaints} />
-        <Metric title="Resolved" value={stats.resolvedComplaints} />
-        <Metric title="Closed" value={stats.closedComplaints} />
+      {/* Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <Metric title="Total Complaints" value={stats?.totalComplaints || 0} />
+        <Metric title="Pending" value={stats?.pendingComplaints || 0} />
+        <Metric title="Resolved" value={stats?.resolvedComplaints || 0} />
+        <Metric title="Closed" value={stats?.closedComplaints || 0} />
       </div>
 
-      {/* ---------------- Department Summary ---------------- */}
-      <div className="bg-white rounded shadow-sm p-4">
-        <h3 className="font-semibold text-gray-800 mb-4">
-          Department-wise Complaints
-        </h3>
+      {/* Department */}
+      {hasGroups(departmentGroups) && (
+        <GroupSection
+          title="Department-wise Complaints"
+          groups={departmentGroups}
+        />
+      )}
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {DEPARTMENTS.map((dept) => (
-            <div
-              key={dept}
-              onClick={() =>
-                 setOpenDept(dept)
-              }
-              className="cursor-pointer rounded border p-3 hover:bg-blue-50 flex justify-between"
-            >
-              <span className="font-medium">{dept}</span>
-              <span className="font-semibold">
-                {getDepartmentComplaints(dept).length}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* State */}
+      {["SUPER_ADMIN", "CENTRAL_ADMIN"].includes(role) &&
+        hasGroups(stateGroups) && (
+          <GroupSection title="State-wise Complaints" groups={stateGroups} />
+        )}
 
-      
+      {/* District */}
+      {["SUPER_ADMIN", "CENTRAL_ADMIN", "STATE_ADMIN"].includes(role) &&
+        hasGroups(districtGroups) && (
+          <GroupSection
+            title={
+              role === "STATE_ADMIN"
+                ? `District-wise Complaints (${formatLabel(
+                    user.location.state
+                  )})`
+                : "District-wise Complaints"
+            }
+            groups={districtGroups}
+          />
+        )}
 
-      {/* ---------------- Department-wise Report Table ---------------- */}
-      <div className="bg-white rounded shadow-sm overflow-x-auto">
-        <div className="border-b px-6 py-4">
-          <h3 className="font-semibold text-gray-800">
-            Department-wise Report
-          </h3>
-        </div>
+      {/* City */}
+      {["SUPER_ADMIN", "CENTRAL_ADMIN", "STATE_ADMIN", "DISTRICT_ADMIN"].includes(
+        role
+      ) &&
+        hasGroups(cityGroups) && (
+          <GroupSection
+            title={
+              role === "DISTRICT_ADMIN"
+                ? `City-wise Complaints (${formatLabel(
+                    user.location.district
+                  )})`
+                : role === "STATE_ADMIN"
+                ? `City-wise Complaints (${formatLabel(user.location.state)})`
+                : "City-wise Complaints"
+            }
+            groups={cityGroups}
+          />
+        )}
 
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600">
-            <tr>
-              <th className="px-6 py-3 text-left">Department</th>
-              <th className="px-6 py-3 text-left">Total</th>
-              <th className="px-6 py-3 text-left">Resolved</th>
-              <th className="px-6 py-3 text-left">Pending</th>
-              <th className="px-6 py-3 text-left">Closed</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {DEPARTMENTS.map((dept) => {
-              const deptComplaints = getDepartmentComplaints(dept);
-
-              return (
-                <tr key={dept} className="border-t">
-                  <td className="px-6 py-3">{dept}</td>
-                  <td className="px-6 py-3">{deptComplaints.length}</td>
-                  <td className="px-6 py-3">
-                    {deptComplaints.filter(
-                      (c) => c.status === "RESOLVED"
-                    ).length}
-                  </td>
-                  <td className="px-6 py-3">
-                    {getPendingCount(deptComplaints)}
-                  </td>
-                  <td className="px-6 py-3">
-                    {deptComplaints.filter(
-                      (c) => c.status === "CLOSED"
-                    ).length}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ---------------- Recent Complaints ---------------- */}
-      <div className="bg-white rounded shadow-sm overflow-x-auto">
-        <div className="border-b px-6 py-4">
-          <h3 className="font-semibold text-gray-800">
-            Recent Complaints
-          </h3>
-        </div>
-
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600">
-            <tr>
-              <th className="px-6 py-3 text-left">ID</th>
-              <th className="px-6 py-3 text-left">Category</th>
-              <th className="px-6 py-3 text-left">Status</th>
-              <th className="px-6 py-3 text-left">Upvotes</th>
-              <th className="px-6 py-3 text-left">Created</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {complaints.slice(0, 8).map((c) => (
-              <tr key={c._id} className="border-t hover:bg-gray-50">
-                <td className="px-6 py-3">{c._id.slice(-6)}</td>
-                <td className="px-6 py-3">{c.category}</td>
-                <td className="px-6 py-3">
-                  <StatusBadge status={c.status} />
-                </td>
-                <td className="px-6 py-3">{c.upvoteCount}</td>
-                <td className="px-6 py-3">
-                  {new Date(c.createdAt).toLocaleDateString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/*--Department Complaints Drawer*/}
-      <DepartmentComplaintsDrawer
-        department={openDept}
-        complaints={
-          openDept
-            ? complaints.filter(
-                (c) => c.category === openDept
-              )
-            : []
-        }
-        onClose={() => setOpenDept(null)}
-      />
+      {openGroup && (
+        <DepartmentComplaintsDrawer
+          department={groupTitle}
+          complaints={groupedComplaints}
+          onClose={() => setOpenGroup(null)}
+        />
+      )}
     </div>
   );
 }
 
-/* ---------------- helpers ---------------- */
+/* ---------------- metric ---------------- */
 
 function Metric({ title, value }) {
   return (
     <div className="bg-white rounded shadow-sm p-4">
       <p className="text-xs text-gray-500">{title}</p>
-      <p className="text-2xl font-bold text-gray-800">{value}</p>
+      <p className="text-2xl font-bold">{value}</p>
     </div>
-  );
-}
-
-function StatusBadge({ status }) {
-  const colors = {
-    SUBMITTED: "bg-gray-200 text-gray-700",
-    VERIFIED: "bg-blue-100 text-blue-700",
-    ASSIGNED: "bg-yellow-100 text-yellow-700",
-    IN_PROGRESS: "bg-orange-100 text-orange-700",
-    RESOLVED: "bg-green-100 text-green-700",
-    CLOSED: "bg-green-200 text-green-800",
-  };
-
-  return (
-    <span
-      className={`rounded px-2 py-1 text-xs font-medium ${
-        colors[status] || "bg-gray-100 text-gray-600"
-      }`}
-    >
-      {status}
-    </span>
   );
 }
 

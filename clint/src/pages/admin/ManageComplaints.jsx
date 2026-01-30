@@ -9,7 +9,10 @@ import {
   closeComplaint,
 } from "../../services/complaint.service";
 import { useRole } from "../../hooks/useRole";
+import { useAuth } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
+
+/* ---------------- constants ---------------- */
 
 const STATUS_OPTIONS = [
   "SUBMITTED",
@@ -22,14 +25,30 @@ const STATUS_OPTIONS = [
 
 const PAGE_SIZE = 10;
 
+const PENDING_STATUSES = [
+  "SUBMITTED",
+  "VERIFIED",
+  "ASSIGNED",
+  "IN_PROGRESS",
+];
+
+/* ---------------- helpers ---------------- */
+
+const normalize = (value) => {
+  if (!value || typeof value !== "string") return "unknown";
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+};
+
+/* ---------------- component ---------------- */
+
 function ManageComplaints() {
   const { role } = useRole();
+  const { user } = useAuth();
 
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
 
-  // 🔍 search + pagination
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
@@ -38,7 +57,7 @@ function ManageComplaints() {
   }, []);
 
   useEffect(() => {
-    setPage(1); // reset page on search
+    setPage(1);
   }, [search]);
 
   const loadComplaints = async () => {
@@ -53,56 +72,43 @@ function ManageComplaints() {
     }
   };
 
+  /* ---------------- status actions ---------------- */
+
   const handleStatusChange = async (complaint, nextStatus) => {
     try {
       setUpdatingId(complaint._id);
       const currentStatus = complaint.status;
 
-      if (["CLOSED", "REJECTED"].includes(currentStatus)) {
-        alert("This complaint is already closed");
+      if (currentStatus === "CLOSED") {
+        alert("Complaint already closed");
         return;
       }
 
       switch (nextStatus) {
         case "VERIFIED":
-          if (currentStatus !== "SUBMITTED") {
-            alert("Only SUBMITTED complaints can be verified");
-            return;
-          }
+          if (currentStatus !== "SUBMITTED") return;
           await verifyComplaint(complaint._id);
           break;
 
         case "ASSIGNED":
-          if (currentStatus !== "VERIFIED") {
-            alert("Only VERIFIED complaints can be assigned");
-            return;
-          }
+          if (currentStatus !== "VERIFIED") return;
           const officerId = prompt("Enter Officer ID");
           if (!officerId) return;
           await assignComplaint(complaint._id, { officerId });
           break;
 
         case "IN_PROGRESS":
-          if (currentStatus !== "ASSIGNED") {
-            alert("Work can start only after assignment");
-            return;
-          }
+          if (currentStatus !== "ASSIGNED") return;
           await startWork(complaint._id);
           break;
 
         case "RESOLVED":
-          if (currentStatus !== "IN_PROGRESS") {
-            alert("Only IN_PROGRESS complaints can be resolved");
-            return;
-          }
+          if (currentStatus !== "IN_PROGRESS") return;
           await resolveComplaint(complaint._id);
           break;
 
         case "CLOSED":
-          if (currentStatus !== "RESOLVED") {
-            alert("Only RESOLVED complaints can be closed");
-            return;
-          }
+          if (currentStatus !== "RESOLVED") return;
           await closeComplaint(complaint._id);
           break;
 
@@ -112,27 +118,59 @@ function ManageComplaints() {
 
       await loadComplaints();
     } catch (err) {
-      console.error("Status update failed", err);
+      console.error(err);
       alert(err?.response?.data?.message || "Action not allowed");
     } finally {
       setUpdatingId(null);
     }
   };
 
-  /* ---------- SEARCH FILTER ---------- */
-  const filteredComplaints = complaints.filter((c) => {
-    const q = search.toLowerCase();
-    return (
-      c._id.toLowerCase().includes(q) ||
-      c.category?.toLowerCase().includes(q) ||
-      c.status?.toLowerCase().includes(q)
-    );
-  });
+  /* ---------------- FILTERING (ROLE + SEARCH) ---------------- */
 
-  /* ---------- PAGINATION ---------- */
-  const totalPages = Math.ceil(
-    filteredComplaints.length / PAGE_SIZE
+/* ---------------- FILTERING (ROLE + SEARCH) ---------------- */
+
+const filteredComplaints = complaints.filter((c) => {
+  const userState = normalize(user?.location?.state);
+  const userDistrict = normalize(user?.location?.district);
+
+  const complaintState = normalize(c?.location?.state);
+  const complaintDistrict = normalize(c?.location?.district);
+
+  // 🔐 STATE ADMIN
+  if (role === "STATE_ADMIN") {
+    if (
+      userState !== "unknown" &&
+      complaintState !== userState
+    ) {
+      return false;
+    }
+  }
+
+  // 🔐 DISTRICT ADMIN
+  if (role === "DISTRICT_ADMIN") {
+    if (
+      complaintState !== userState ||
+      complaintDistrict !== userDistrict
+    ) {
+      return false;
+    }
+  }
+
+  // 🔍 SEARCH FILTER
+  const q = search.toLowerCase();
+
+  return (
+    c._id.toLowerCase().includes(q) ||
+    c.category?.toLowerCase().includes(q) ||
+    c.status?.toLowerCase().includes(q)
   );
+});
+
+
+
+  /* ---------------- PAGINATION ---------------- */
+
+  const totalPages = Math.ceil(filteredComplaints.length / PAGE_SIZE);
 
   const paginatedComplaints = filteredComplaints.slice(
     (page - 1) * PAGE_SIZE,
@@ -143,12 +181,14 @@ function ManageComplaints() {
     return <p className="text-gray-600">Loading complaints...</p>;
   }
 
+  /* ---------------- UI ---------------- */
+
   return (
     <div className="space-y-6">
-      {/* Header + Search */}
+      {/* Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-800">
-          Complaints Detail
+          Complaints Management
         </h2>
 
         <input
@@ -160,20 +200,19 @@ function ManageComplaints() {
         />
       </div>
 
+      {/* Table */}
       <div className="bg-white rounded shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600">
             <tr>
-              <th className="px-4 py-3 text-left">ID</th>
-              <th className="px-4 py-3 text-left">Category</th>
-              <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-left">Upvotes</th>
-              <th className="px-4 py-3 text-left">Assigned By</th>
-              <th className="px-4 py-3 text-left">Verified By</th>
-              <th className="px-4 py-3 text-left">Assigned To</th>
-              <th className="px-4 py-3 text-left">Created</th>
-              <th className="px-4 py-3 text-left">Resolved On</th>
-              <th className="px-4 py-3 text-left">View</th>
+              <th className="px-4 py-3">ID</th>
+              <th className="px-4 py-3">Category</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Upvotes</th>
+              <th className="px-4 py-3">Assigned To</th>
+              <th className="px-4 py-3">Created</th>
+              <th className="px-4 py-3">Resolved</th>
+              <th className="px-4 py-3">View</th>
             </tr>
           </thead>
 
@@ -181,7 +220,7 @@ function ManageComplaints() {
             {paginatedComplaints.length === 0 && (
               <tr>
                 <td
-                  colSpan="10"
+                  colSpan="8"
                   className="px-6 py-6 text-center text-gray-500"
                 >
                   No complaints found
@@ -201,11 +240,11 @@ function ManageComplaints() {
                     onChange={(e) =>
                       handleStatusChange(c, e.target.value)
                     }
-                    className="rounded border px-2 py-1 text-sm"
+                    className="border rounded px-2 py-1 text-sm"
                   >
-                    {STATUS_OPTIONS.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
                       </option>
                     ))}
                   </select>
@@ -214,18 +253,6 @@ function ManageComplaints() {
                 <td className="px-4 py-3">{c.upvoteCount}</td>
 
                 <td className="px-4 py-3">
-                  {c.verifiedBy?.name || "—"}
-                </td>
-
-                <td className="px-4 py-3">
-                  {c.verifiedBy?.name || "—"}
-                </td>
-
-                <td
-                  className={`px-4 py-3 ${
-                    !c.assignedTo ? "text-red-500" : ""
-                  }`}
-                >
                   {c.assignedTo?.name || "Unassigned"}
                 </td>
 
@@ -235,9 +262,7 @@ function ManageComplaints() {
 
                 <td className="px-4 py-3">
                   {c.resolvedAt
-                    ? dayjs(c.resolvedAt).format(
-                        "DD MMM YYYY"
-                      )
+                    ? dayjs(c.resolvedAt).format("DD MMM YYYY")
                     : "—"}
                 </td>
 
