@@ -25,13 +25,6 @@ const STATUS_OPTIONS = [
 
 const PAGE_SIZE = 10;
 
-const PENDING_STATUSES = [
-  "SUBMITTED",
-  "VERIFIED",
-  "ASSIGNED",
-  "IN_PROGRESS",
-];
-
 /* ---------------- helpers ---------------- */
 
 const normalize = (value) => {
@@ -77,38 +70,37 @@ function ManageComplaints() {
   const handleStatusChange = async (complaint, nextStatus) => {
     try {
       setUpdatingId(complaint._id);
-      const currentStatus = complaint.status;
 
-      if (currentStatus === "CLOSED") {
+      if (complaint.status === "CLOSED") {
         alert("Complaint already closed");
         return;
       }
 
       switch (nextStatus) {
         case "VERIFIED":
-          if (currentStatus !== "SUBMITTED") return;
+          if (complaint.status !== "SUBMITTED") return;
           await verifyComplaint(complaint._id);
           break;
 
         case "ASSIGNED":
-          if (currentStatus !== "VERIFIED") return;
+          if (complaint.status !== "VERIFIED") return;
           const officerId = prompt("Enter Officer ID");
           if (!officerId) return;
           await assignComplaint(complaint._id, { officerId });
           break;
 
         case "IN_PROGRESS":
-          if (currentStatus !== "ASSIGNED") return;
+          if (complaint.status !== "ASSIGNED") return;
           await startWork(complaint._id);
           break;
 
         case "RESOLVED":
-          if (currentStatus !== "IN_PROGRESS") return;
+          if (complaint.status !== "IN_PROGRESS") return;
           await resolveComplaint(complaint._id);
           break;
 
         case "CLOSED":
-          if (currentStatus !== "RESOLVED") return;
+          if (complaint.status !== "RESOLVED") return;
           await closeComplaint(complaint._id);
           break;
 
@@ -125,18 +117,18 @@ function ManageComplaints() {
     }
   };
 
-  /* ---------------- FILTERING (ROLE + SEARCH) ---------------- */
+  /* ---------------- FILTERING (ROLE + CATEGORY + LOCATION) ---------------- */
 
-/* ---------------- FILTERING (ROLE + SEARCH) ---------------- */
-
-const filteredComplaints = complaints.filter((c) => {
+  const filteredComplaints = complaints.filter((c) => {
   const userState = normalize(user?.location?.state);
   const userDistrict = normalize(user?.location?.district);
+  const userDepartment = user?.department; // ✅ correct
 
   const complaintState = normalize(c?.location?.state);
   const complaintDistrict = normalize(c?.location?.district);
+  const complaintCategory = c?.category; // ✅ correct
 
-  // 🔐 STATE ADMIN
+  /* ---------- STATE ADMIN ---------- */
   if (role === "STATE_ADMIN") {
     if (
       userState !== "unknown" &&
@@ -146,7 +138,7 @@ const filteredComplaints = complaints.filter((c) => {
     }
   }
 
-  // 🔐 DISTRICT ADMIN
+  /* ---------- DISTRICT ADMIN ---------- */
   if (role === "DISTRICT_ADMIN") {
     if (
       complaintState !== userState ||
@@ -156,7 +148,17 @@ const filteredComplaints = complaints.filter((c) => {
     }
   }
 
-  // 🔍 SEARCH FILTER
+  /* ---------- DEPT_HEAD / OFFICER / WORKER ---------- */
+  if (["DEPT_HEAD", "OFFICER", "WORKER"].includes(role)) {
+    if (
+      complaintDistrict !== userDistrict ||               // district match
+      complaintCategory !== userDepartment                // 🔥 FIX
+    ) {
+      return false;
+    }
+  }
+
+  /* ---------- SEARCH ---------- */
   const q = search.toLowerCase();
 
   return (
@@ -165,8 +167,6 @@ const filteredComplaints = complaints.filter((c) => {
     c.status?.toLowerCase().includes(q)
   );
 });
-
-
 
   /* ---------------- PAGINATION ---------------- */
 

@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  getDashboardStats,
-} from "../../services/admin.service";
+import { getDashboardStats } from "../../services/admin.service";
 import { getAllAdminComplaints } from "../../services/complaint.service";
 import { useRole } from "../../hooks/useRole";
 import { useAuth } from "../../context/AuthContext";
@@ -56,31 +54,51 @@ function AdminDashboard() {
     role,
     user?.location?.state,
     user?.location?.district,
-    user?.location?.city,
+    user?.department,
   ]);
 
   if (loading) {
     return <p className="text-gray-600">Loading admin dashboard...</p>;
   }
 
-  /* ---------------- ROLE FILTER ---------------- */
+  /* ---------------- ROLE + CATEGORY FILTER ---------------- */
 
-  const visibleComplaints = complaints.filter((c) => {
-    const cState = normalize(c.location?.state);
-    const cDistrict = normalize(c.location?.district);
-    const cCity = normalize(c.location?.city);
+ const visibleComplaints = complaints.filter((c) => {
+  const cState = normalize(c.location?.state);
+  const cDistrict = normalize(c.location?.district);
+  const cCategory = normalize(c.category);          
 
-    const uState = normalize(user?.location?.state);
-    const uDistrict = normalize(user?.location?.district);
-    const uCity = normalize(user?.location?.city);
-
-    if (["SUPER_ADMIN", "CENTRAL_ADMIN"].includes(role)) return true;
-    if (role === "STATE_ADMIN") return cState === uState;
-    if (role === "DISTRICT_ADMIN")
-      return cState === uState && cDistrict === uDistrict;
-   
+  const uState = normalize(user?.location?.state);
+  const uDistrict = normalize(user?.location?.district);
+  const uDepartment = normalize(user?.department);   
+  // SUPER / CENTRAL
+  if (["SUPER_ADMIN", "CENTRAL_ADMIN"].includes(role)) {
     return true;
-  });
+  }
+
+  // STATE ADMIN
+  if (role === "STATE_ADMIN") {
+    return cState === uState;
+  }
+
+  // DISTRICT ADMIN
+  if (role === "DISTRICT_ADMIN") {
+    return cState === uState && cDistrict === uDistrict;
+  }
+
+  // ✅ DEPT_HEAD / OFFICER / WORKER (FINAL FIX)
+  if (["DEPT_HEAD", "OFFICER", "WORKER"].includes(role)) {
+    
+    return (
+      cState === uState && 
+      cDistrict === uDistrict &&
+      cCategory === uDepartment
+    );
+  }
+
+  return false;
+});
+
 
   /* ---------------- GROUPING ---------------- */
 
@@ -145,9 +163,15 @@ function AdminDashboard() {
     <div className="space-y-8">
       <div>
         <h2 className="text-xl font-semibold">Admin Dashboard</h2>
-        <p className="text-sm text-gray-500">
-          Role: <b>{role}</b>
-        </p>
+      <p className="text-sm text-gray-500">
+        Role: <b>{role}</b>
+        {["DEPT_HEAD", "OFFICER", "WORKER"].includes(role) && user?.department && (
+          <span className="ml-2">
+            | Department: <b>{user.department}</b>
+          </span>
+        )}
+      </p>
+
       </div>
 
       {/* Metrics */}
@@ -175,16 +199,7 @@ function AdminDashboard() {
       {/* District */}
       {["SUPER_ADMIN", "CENTRAL_ADMIN", "STATE_ADMIN"].includes(role) &&
         hasGroups(districtGroups) && (
-          <GroupSection
-            title={
-              role === "STATE_ADMIN"
-                ? `District-wise Complaints (${formatLabel(
-                    user.location.state
-                  )})`
-                : "District-wise Complaints"
-            }
-            groups={districtGroups}
-          />
+          <GroupSection title="District-wise Complaints" groups={districtGroups} />
         )}
 
       {/* City */}
@@ -192,18 +207,7 @@ function AdminDashboard() {
         role
       ) &&
         hasGroups(cityGroups) && (
-          <GroupSection
-            title={
-              role === "DISTRICT_ADMIN"
-                ? `City-wise Complaints (${formatLabel(
-                    user.location.district
-                  )})`
-                : role === "STATE_ADMIN"
-                ? `City-wise Complaints (${formatLabel(user.location.state)})`
-                : "City-wise Complaints"
-            }
-            groups={cityGroups}
-          />
+          <GroupSection title="City-wise Complaints" groups={cityGroups} />
         )}
 
       {openGroup && (

@@ -49,8 +49,16 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       break;
 
     case "DEPT_HEAD":
-      complaintFilter.category = department;
+      complaintFilter["location.district"] = {
+        $regex: `^${location.district}$`,
+        $options: "i",
+      };
+      complaintFilter.category = {
+        $regex: `^${department}$`,
+        $options: "i",
+      };
       break;
+
 
     case "OFFICER":
       complaintFilter.assignedTo = _id;

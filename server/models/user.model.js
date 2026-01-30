@@ -73,22 +73,6 @@ const userSchema = new Schema(
       },
     },
 
-
-    jurisdiction: {
-      state: {
-        type: String,
-        index: true,
-      },
-      district: {
-        type: String,
-        index: true,
-      },
-      city: {
-        type: String,
-        index: true,
-      },
-    },
-
     municipalId: {
       type: String, 
       required: false,
@@ -106,7 +90,7 @@ const userSchema = new Schema(
         "OTHER",
       ],
       required: function () {
-        return ["DEPT_HEAD", "OFFICER"].includes(this.role);
+        return ["DEPT_HEAD", "OFFICER","WORKER"].includes(this.role);
       },
     },
 

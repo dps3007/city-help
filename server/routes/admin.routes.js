@@ -16,7 +16,7 @@ const router = express.Router();
 router.get(
   '/dashboard',
   verifyJWT,
-  checkRole('DISTRICT_ADMIN'),
+  checkRole('OFFICER'),
   getDashboardStats
 );
 

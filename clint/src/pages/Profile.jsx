@@ -3,6 +3,17 @@ import dayjs from "dayjs";
 import { useAuth } from "../context/AuthContext";
 import { updateAvatar, updateCurrentUser } from "../services/user.service";
 
+/* ---------------- constants ---------------- */
+
+const DEPARTMENT_OPTIONS = [
+  "GARBAGE",
+  "ROADS",
+  "WATER",
+  "STREETLIGHT",
+  "ELECTRICITY",
+  "OTHER",
+];
+
 function Profile() {
   const { user, logout, updateUser } = useAuth();
 
@@ -133,29 +144,35 @@ function Profile() {
         <Field label="Email" value={user.email} />
         <Field label="Role" value={user.role} />
 
-        {canEditDepartment ? (
+        {/* Department: ONLY for DEPT_HEAD / OFFICER / WORKER */}
+        {canEditDepartment && (
           <div className="space-y-2">
             <label className="text-sm text-gray-500">
               Department
             </label>
 
-            <input
+            <select
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
-              placeholder="Department name"
               className="w-full border px-3 py-2 rounded text-sm"
-            />
+            >
+              <option value="">Select Department</option>
+
+              {DEPARTMENT_OPTIONS.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
 
             <button
               onClick={handleUpdateDepartment}
-              disabled={loading}
+              disabled={loading || !department}
               className="bg-purple-600 text-white px-4 py-2 rounded text-sm disabled:opacity-50"
             >
               {loading ? "Updating..." : "Update Department"}
             </button>
           </div>
-        ) : (
-          <Field label="Department" value={user.department} />
         )}
 
         <Field

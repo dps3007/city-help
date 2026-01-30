@@ -54,7 +54,7 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
 
 // Update current logged-in user profile
 export const updateCurrentUser = asyncHandler(async (req, res) => {
-  const { name, email, state, district, city } = req.body;
+  const { name, email, state, district, city, department } = req.body;
 
   // ❌ nothing provided
   if (
@@ -62,7 +62,8 @@ export const updateCurrentUser = asyncHandler(async (req, res) => {
     email === undefined &&
     state === undefined &&
     district === undefined &&
-    city === undefined
+    city === undefined &&
+    department === undefined
   ) {
     throw new ApiError(
       400,
@@ -97,7 +98,7 @@ export const updateCurrentUser = asyncHandler(async (req, res) => {
     updateFields.email = email.toLowerCase();
   }
 
-  /* ---------- location (🔥 FIXED & NESTED) ---------- */
+  /* ---------- location (nested) ---------- */
   if (state !== undefined) {
     updateFields["location.state"] =
       state?.trim().toLowerCase() || null;
@@ -113,6 +114,33 @@ export const updateCurrentUser = asyncHandler(async (req, res) => {
       city?.trim().toLowerCase() || null;
   }
 
+  /* ---------- department (🔥 FIX) ---------- */
+  if (department !== undefined) {
+    const allowedRoles = ["DEPT_HEAD", "OFFICER", "WORKER"];
+
+    if (!allowedRoles.includes(req.user.role)) {
+      throw new ApiError(
+        403,
+        "You are not allowed to update department"
+      );
+    }
+
+    const allowedDepartments = [
+      "GARBAGE",
+      "ROADS",
+      "WATER",
+      "STREETLIGHT",
+      "ELECTRICITY",
+      "OTHER",
+    ];
+
+    if (!allowedDepartments.includes(department)) {
+      throw new ApiError(400, "Invalid department");
+    }
+
+    updateFields.department = department;
+  }
+
   const updatedUser = await User.findByIdAndUpdate(
     req.user._id,
     { $set: updateFields },
@@ -122,7 +150,6 @@ export const updateCurrentUser = asyncHandler(async (req, res) => {
   if (!updatedUser) {
     throw new ApiError(404, "User not found");
   }
-  console.log(updatedUser);
 
   return res.status(200).json(
     new ApiResponse({
