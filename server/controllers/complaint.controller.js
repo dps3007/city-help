@@ -1,3 +1,4 @@
+import { io } from "../server.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import Complaint from "../models/complaint.model.js";
 import * as ComplaintService from "../services/complaint.service.js";
@@ -111,6 +112,25 @@ export const createComplaint = asyncHandler(async (req, res) => {
     { category, description, attachments, location },
     req.user
   );
+
+  // 🔴 REAL-TIME: new complaint
+  if (complaint?.location?.district) {
+    io.to(`district:${complaint.location.district}`).emit(
+      "complaint:new",
+      complaint
+    );
+  }
+
+  if (complaint?.location?.state) {
+    io.to(`state:${complaint.location.state}`).emit(
+      "complaint:new",
+      complaint
+    );
+  }
+
+  // central feed
+  io.to("india").emit("complaint:new", complaint);
+
   
   return res.status(201).json(
     new ApiResponse({ 
@@ -205,6 +225,17 @@ export const verifyComplaint = asyncHandler(async (req, res) => {
   complaint.verifiedAt = new Date();
   await complaint.save();
 
+  // 🔴 REAL-TIME: complaint verified
+  io.to(`district:${complaint.location.district}`).emit(
+    "complaint:verified",
+    {
+      complaintId: complaint._id,
+      officer,
+      status: complaint.status,
+    }
+  );
+
+
   // Fetch citizen
   const citizen = await User.findById(complaint.citizen);
   if (!citizen) {
@@ -265,6 +296,16 @@ export const assignComplaint = asyncHandler(async (req, res) => {
   complaint.status = "ASSIGNED";
   await complaint.save();
 
+  // 🔴 REAL-TIME: complaint assigned
+  io.to(`district:${complaint.location.district}`).emit(
+    "complaint:assigned",
+    {
+      complaintId: complaint._id,
+      officer,
+      status: complaint.status,
+    }
+  );
+
   // 🔔 Officer notification
   await sendNotification({
     userId: officer._id,
@@ -320,6 +361,15 @@ export const startWork = asyncHandler(async (req, res) => {
   complaint.workStartedAt = new Date();
   await complaint.save();
 
+  // 🔴 REAL-TIME: work started
+  io.to(`district:${complaint.location.district}`).emit(
+    "complaint:started",
+    {
+      complaintId: complaint._id,
+      status: complaint.status,
+    }
+  );
+
   const citizen = await User.findById(complaint.citizen);
   if (!citizen) {
     throw new ApiError(404, "Citizen not found");
@@ -365,6 +415,15 @@ export const resolveComplaint = asyncHandler(async (req, res) => {
   complaint.resolvedBy = user._id;
   complaint.resolvedAt = new Date();
   await complaint.save();
+
+  // 🔴 REAL-TIME: complaint resolved
+  io.to(`district:${complaint.location.district}`).emit(
+    "complaint:resolved",
+    {
+      complaintId: complaint._id,
+      status: complaint.status,
+    }
+  );
 
   const citizen = await User.findById(complaint.citizen); 
   if (!citizen) {
@@ -418,6 +477,15 @@ export const closeComplaint = asyncHandler(async (req, res) => {
   complaint.closedAt = new Date();   
   await complaint.save();
 
+  // 🔴 REAL-TIME: complaint closed
+  io.to(`district:${complaint.location.district}`).emit(
+    "complaint:closed",
+    {
+      complaintId: complaint._id,
+      status: complaint.status,
+    }
+  );
+
   const citizen = await User.findById(complaint.citizen);
   if (!citizen) {
     throw new ApiError(404, "Citizen not found");
@@ -449,6 +517,7 @@ export const upvoteComplaint = asyncHandler(async (req, res) => {
   if (!complaint) throw new ApiError(404, "Not found");
 
   const userId = req.user._id.toString();
+
   const index = complaint.upvotes.findIndex(
     (u) => u.toString() === userId
   );
@@ -459,13 +528,21 @@ export const upvoteComplaint = asyncHandler(async (req, res) => {
     complaint.upvotes.push(req.user._id);
   }
 
-  await complaint.save(); // pre-save handles count + priority
+  await complaint.save();
+
+  // 🔥 SINGLE SOURCE OF TRUTH
+  io.to("feed:all").emit("complaint:upvote", {
+    complaintId: complaint._id.toString(),
+    upvoteCount: complaint.upvoteCount,
+    priority: complaint.priority,
+  });
 
   res.json({
     upvoteCount: complaint.upvoteCount,
     priority: complaint.priority,
   });
 });
+
 
 // Citizen → submit feedback
 export const submitFeedback = asyncHandler(async (req, res) => {
@@ -541,9 +618,6 @@ export const submitFeedback = asyncHandler(async (req, res) => {
 export const getFeed = asyncHandler(async (req, res) => {
   const { role, location } = req.user;
 
-  console.log("👤 ROLE:", role);
-  console.log("📍 LOCATION:", location);
-
   // Base filter → only complaints with attachments
   let filter = {
     attachments: { $exists: true, $not: { $size: 0 } },
@@ -599,16 +673,5 @@ export const getFeed = asyncHandler(async (req, res) => {
     (a, b) => b.upvotes.length - a.upvotes.length
   );
 
-  console.log("📄 FEED COUNT:", complaints.length);
-
   res.status(200).json(complaints);
 });
-
-
-
-
-
-
-
-
-

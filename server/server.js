@@ -1,16 +1,54 @@
-import "./config/env.js"; 
+import "./config/env.js";
 import app from "./app.js";
 import connectDB from "./config/db.js";
 
+import http from "http";
+import { Server } from "socket.io";
+
 const PORT = process.env.PORT || 8000;
 
-// Start the server after connecting to the database
+// create http server
+const server = http.createServer(app);
+
+// create socket.io server
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
+
+export const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+  },
+});
+
+// socket connection handler
+io.on("connection", (socket) => {
+
+  socket.on("join:district", (district) => {
+    socket.join(`district:${district.toLowerCase()}`);
+  });
+
+  socket.on("join:state", (state) => {
+    socket.join(`state:${state.toLowerCase()}`);
+  });
+
+  // 🔥 GLOBAL FEED ROOM
+  socket.on("join:feed", () => {
+    socket.join("feed:all");
+  });
+
+});
+
+
+// Start server after DB connection
 const startServer = async () => {
   try {
     await connectDB();
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+    server.listen(PORT, () => {
+      console.log(`🚀 Server + Socket.IO running on port ${PORT}`);
     });
   } catch (err) {
     console.error("❌ Server startup failed", err);
@@ -18,5 +56,4 @@ const startServer = async () => {
   }
 };
 
-// Invoke the server start function
 startServer();

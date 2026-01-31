@@ -20,9 +20,14 @@ import helmet from "helmet";
 const app = express();
 
 // Enable CORS
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
+
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:5174"],
-  credentials: true
+  origin: allowedOrigins,
+  credentials: true,
 }));
 
 // Body parsers

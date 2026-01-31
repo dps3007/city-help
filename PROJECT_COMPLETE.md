@@ -88,7 +88,7 @@ npm run dev
 ```
 
 ### Access Application
-- Frontend: `http://localhost:5174`
+- Frontend: `http://localhost:5173`
 - Backend API: `http://localhost:8000/api/v1`
 - MongoDB: Connected (check .env)
 
@@ -376,9 +376,6 @@ This project demonstrates expertise in:
 - Real-world application architecture
 
 **Perfect for:**
-- Job applications
-- Portfolio showcase
-- Interview projects
 - Learning resource
 - Open-source contribution
 
