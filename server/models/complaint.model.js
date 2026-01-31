@@ -149,6 +149,12 @@ const complaintSchema = new Schema(
       default: 0,
     },
 
+    priority: {
+      type: String,
+      enum: ["NORMAL", "MEDIUM", "HIGH"],
+      default: "NORMAL",
+    },
+
     aiCategory: String,
     aiConfidence: {
       type: Number,
@@ -174,10 +180,10 @@ const complaintSchema = new Schema(
 );
 
 // Pre-save hook to generate complaintId and maintain upvoteCount
-complaintSchema.pre('save', function (next) {
-  // Generate human-readable complaint ID
+complaintSchema.pre("save", function (next) {
+  /* Generate readable complaint ID */
   if (!this.complaintId) {
-    const city = (this.location?.city || 'GEN')
+    const city = (this.location?.city || "GEN")
       .slice(0, 3)
       .toUpperCase();
 
@@ -186,10 +192,13 @@ complaintSchema.pre('save', function (next) {
     )}`;
   }
 
-  // Keep upvoteCount consistent
-  if (this.isModified('upvotes')) {
-    this.upvoteCount = this.upvotes.length;
-  }
+  /* 🔥 ALWAYS SYNC UPVOTES */
+  this.upvoteCount = this.upvotes.length;
+
+  /* 🔥 AUTO PRIORITY */
+  if (this.upvoteCount >= 5) this.priority = "HIGH";
+  else if (this.upvoteCount >= 3) this.priority = "MEDIUM";
+  else this.priority = "NORMAL";
 
   next();
 });

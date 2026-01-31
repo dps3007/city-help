@@ -445,31 +445,26 @@ export const closeComplaint = asyncHandler(async (req, res) => {
 
 // Citizen → upvote complaint
 export const upvoteComplaint = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const userId = req.user._id;
+  const complaint = await Complaint.findById(req.params.id);
+  if (!complaint) throw new ApiError(404, "Not found");
 
-  const complaint = await Complaint.findById(id);
-  if (!complaint) {
-    throw new ApiError(404, "Complaint not found");
-  }
-
-  // Check if user already upvoted
-  if (complaint.upvotes.includes(userId)) {
-    // Remove upvote
-    complaint.upvotes = complaint.upvotes.filter(id => id.toString() !== userId.toString());
-  } else {
-    // Add upvote
-    complaint.upvotes.push(userId);
-  }
-
-  await complaint.save();
-
-  return res.status(200).json(
-    new ApiResponse({
-      message: "Complaint upvoted successfully",
-      data: { complaint },
-    })
+  const userId = req.user._id.toString();
+  const index = complaint.upvotes.findIndex(
+    (u) => u.toString() === userId
   );
+
+  if (index !== -1) {
+    complaint.upvotes.splice(index, 1);
+  } else {
+    complaint.upvotes.push(req.user._id);
+  }
+
+  await complaint.save(); // pre-save handles count + priority
+
+  res.json({
+    upvoteCount: complaint.upvoteCount,
+    priority: complaint.priority,
+  });
 });
 
 // Citizen → submit feedback
@@ -541,6 +536,78 @@ export const submitFeedback = asyncHandler(async (req, res) => {
     })
   );
 });
+
+//feed
+export const getFeed = asyncHandler(async (req, res) => {
+  const { role, location } = req.user;
+
+  console.log("👤 ROLE:", role);
+  console.log("📍 LOCATION:", location);
+
+  // Base filter → only complaints with attachments
+  let filter = {
+    attachments: { $exists: true, $not: { $size: 0 } },
+  };
+
+  // 🟢 DISTRICT LEVEL
+  if (
+    ["CITIZEN", "OFFICER", "DEPT_HEAD", "DISTRICT_ADMIN"].includes(role)
+  ) {
+    if (!location?.district) {
+      return res.status(400).json({
+        message: "User district not found",
+      });
+    }
+
+    filter["location.district"] = {
+      $regex: `^${location.district}$`,
+      $options: "i",
+    };
+  }
+
+  // 🔵 STATE LEVEL
+  else if (role === "STATE_ADMIN") {
+    if (!location?.state) {
+      return res.status(400).json({
+        message: "User state not found",
+      });
+    }
+
+    filter["location.state"] = {
+      $regex: `^${location.state}$`,
+      $options: "i",
+    };
+  }
+
+  // 🔴 CENTRAL / SUPER → ALL INDIA
+  else if (["CENTRAL_ADMIN", "SUPER_ADMIN"].includes(role)) {
+    // no extra filter
+  }
+
+  else {
+    return res.status(403).json({
+      message: "Role not allowed to view feed",
+    });
+  }
+
+  const complaints = await Complaint.find(filter)
+    .populate("citizen", "name avatar")
+    .sort({ createdAt: -1 });
+
+  // 🔥 Sort by upvotes length (reliable)
+  complaints.sort(
+    (a, b) => b.upvotes.length - a.upvotes.length
+  );
+
+  console.log("📄 FEED COUNT:", complaints.length);
+
+  res.status(200).json(complaints);
+});
+
+
+
+
+
 
 
 

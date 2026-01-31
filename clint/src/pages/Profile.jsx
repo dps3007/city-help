@@ -90,9 +90,9 @@ function Profile() {
 
   /* ---------------- ROLE-BASED LOCATION UI ---------------- */
 
-  const hideLocationRoles = ["CITIZEN", "SUPER_ADMIN", "CENTRAL_ADMIN"];
+  const hideLocationRoles = ["SUPER_ADMIN", "CENTRAL_ADMIN"];
   const showStateOnly = user.role === "STATE_ADMIN";
-  const showStateDistrict = ["DISTRICT_ADMIN", "DEPT_HEAD", "OFFICER"].includes(
+  const showStateDistrict = ["DISTRICT_ADMIN", "DEPT_HEAD", "OFFICER","CITIZEN"].includes(
     user.role
   );
 

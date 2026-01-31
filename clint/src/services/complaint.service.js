@@ -40,11 +40,6 @@ export const submitFeedback = async (id, data) => {
   return res.data;
 };
 
-export const upvoteComplaint = async (id) => {
-  const res = await api.post(`/complaints/${id}/upvote`);
-  return res.data.data;
-};
-
 export const getMyComplaints = async () => {
   const res = await api.get("/complaints");
   return res.data.data;
@@ -64,3 +59,14 @@ export const getAllAdminComplaints = async (department) => {
   return res.data;
 };
 
+/* Upvote */
+export const upvoteComplaint = async (id) => {
+  const res = await api.post(`/complaints/${id}/upvote`);
+  return res.data;
+};
+
+/* District Feed (frontend caller) */
+export const getDistrictFeed = async () => {
+  const res = await api.get("/complaints/feed");
+  return res.data; // array of complaints
+};

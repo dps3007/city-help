@@ -3,6 +3,7 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { checkRole } from "../middlewares/role.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import { createComplaintSchema } from "../validators/complaint.validator.js";
+import upload from "../middlewares/upload.middleware.js";
 
 import {
   createComplaint,
@@ -16,12 +17,21 @@ import {
   closeComplaint,
   upvoteComplaint,
   submitFeedback,
+  getFeed,
 } from "../controllers/complaint.controller.js";
-import upload from "../middlewares/upload.middleware.js";
 
 const router = Router();
 
-// Citizen → create complaint
+console.log("✅ complaint routes file loaded");
+
+/* ================== FEED (MUST BE FIRST) ================== */
+router.get(
+  "/feed",
+  verifyJWT,
+  getFeed
+);
+
+/* ================== CREATE ================== */
 router.post(
   "/",
   verifyJWT,
@@ -31,69 +41,21 @@ router.post(
   createComplaint
 );
 
-// Citizen / Officer → get own complaints
+/* ================== LIST ================== */
 router.get("/", verifyJWT, getComplaints);
-
 router.get("/admin/all", verifyJWT, checkRole("OFFICER"), getAllComplaints);
 
-// Get complaint by ID with access control
+/* ================== ACTIONS ================== */
+router.patch("/:id/assign", verifyJWT, checkRole("DEPT_HEAD"), assignComplaint);
+router.patch("/:id/verify", verifyJWT, checkRole("DEPT_HEAD"), verifyComplaint);
+router.patch("/:id/start-work", verifyJWT, checkRole("OFFICER"), startWork);
+router.patch("/:id/resolve", verifyJWT, checkRole("OFFICER"), resolveComplaint);
+router.patch("/:id/close", verifyJWT, checkRole("DEPT_HEAD"), closeComplaint);
+
+router.post("/:id/upvote", verifyJWT, checkRole("CITIZEN"), upvoteComplaint);
+router.post("/:id/feedback", verifyJWT, checkRole("CITIZEN"), submitFeedback);
+
+/* ================== GET BY ID (LAST!) ================== */
 router.get("/:id", verifyJWT, getComplaintById);
-
-// Dept Head → assign complaint
-router.patch(
-  "/:id/assign",
-  verifyJWT,
-  checkRole("DEPT_HEAD"),
-  assignComplaint
-);
-
-// Dept Head → verify complaint
-router.patch(
-  "/:id/verify",
-  verifyJWT,
-  checkRole("DEPT_HEAD"),
-  verifyComplaint
-);
-
-// Officer → start work on complaint
-router.patch(
-  "/:id/start-work",
-  verifyJWT,
-  checkRole("OFFICER"),
-  startWork
-);
-
-// Officer → resolve complaint
-router.patch(
-  "/:id/resolve",
-  verifyJWT,
-  checkRole("OFFICER"),
-  resolveComplaint
-);
-
-// Dept Head → close complaint
-router.patch(
-  "/:id/close",
-  verifyJWT,
-  checkRole("DEPT_HEAD"),
-  closeComplaint
-);
-
-// Citizen → upvote complaint
-router.post(
-  "/:id/upvote",
-  verifyJWT,
-  checkRole("CITIZEN"),
-  upvoteComplaint
-);
-
-// Citizen → submit feedback
-router.post(
-  "/:id/feedback",
-  verifyJWT,
-  checkRole("CITIZEN"),
-  submitFeedback
-);
-
 
 export default router;

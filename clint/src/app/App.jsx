@@ -22,12 +22,14 @@ import AdminUsers from "../pages/admin/AdminUsers";
 // Common
 import Leaderboard from "../pages/leaderboard/Leaderboard";
 import Profile from "../pages/Profile";
-
+import DistrictFeed from "../pages/feed/DistrictFeed";
 
 function App() {
   const { isAuthenticated, loading, user } = useAuth();
 
-  if (loading) return <div style={{ padding: 40 }}>Loading CityHelp…</div>;
+  if (loading) {
+    return <div style={{ padding: 40 }}>Loading CityHelp…</div>;
+  }
 
   return (
     <Routes>
@@ -44,7 +46,7 @@ function App() {
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="/register" element={<Navigate to="/" replace />} />
 
-          {/* ================= COMMON LAYOUT ================= */}
+          {/* ================= COMMON DASHBOARD LAYOUT ================= */}
           <Route element={<DashboardLayout />}>
             {/* ROOT DASHBOARD */}
             <Route
@@ -58,7 +60,7 @@ function App() {
               }
             />
 
-            {/* 🔥 COMMON COMPLAINT DETAIL (CITIZEN + ADMIN) */}
+            {/* 🔥 COMMON COMPLAINT DETAIL */}
             <Route path="complaints/:id" element={<ComplaintDetail />} />
 
             {/* ================= CITIZEN ROUTES ================= */}
@@ -74,10 +76,12 @@ function App() {
               </>
             )}
 
+            {/* ================= DISTRICT FEED ================= */}
+            <Route path="feed" element={<DistrictFeed />} />
+
             {/* ================= COMMON ================= */}
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="profile" element={<Profile />} />
-
           </Route>
 
           {/* ================= ADMIN ROUTES ================= */}

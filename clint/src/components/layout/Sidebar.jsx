@@ -26,7 +26,10 @@ function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="p-4 space-y-1">
+        <nav className="p-4 space-y-1">
+            <NavLink to="/feed" className={linkClass}>
+              District Feed
+            </NavLink>
 
         {/* 🟢 CITIZEN MENU */}
         {role === "CITIZEN" && (
