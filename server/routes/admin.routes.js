@@ -37,7 +37,7 @@ router.patch(
 );
 
 // get all users
-router.get("/users", verifyJWT, checkRole("DISTRICT_ADMIN"), getAllUsers);
+router.get("/users", verifyJWT, checkRole("DEPT_HEAD"), getAllUsers);
 
 // create authority
 router.post(

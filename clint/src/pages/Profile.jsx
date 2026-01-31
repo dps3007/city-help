@@ -44,7 +44,6 @@ function Profile() {
       const res = await updateAvatar(file);
       updateUser(res.data.user);
     } catch (err) {
-      console.error(err);
       alert("Failed to update profile photo");
     } finally {
       setLoading(false);
@@ -65,8 +64,7 @@ function Profile() {
 
       updateUser(res.data.user);
       alert("Location updated successfully");
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Failed to update location");
     } finally {
       setLoading(false);
@@ -78,42 +76,36 @@ function Profile() {
   const handleUpdateDepartment = async () => {
     try {
       setLoading(true);
-
       const res = await updateCurrentUser({ department });
       updateUser(res.data.user);
-
       alert("Department updated successfully");
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Failed to update department");
     } finally {
       setLoading(false);
     }
   };
 
-  const canEditDepartment = ["DEPT_HEAD", "OFFICER", "WORKER"].includes(
+  const canEditDepartment = ["DEPT_HEAD", "OFFICER", "WORKER"].includes(user.role);
+
+  /* ---------------- ROLE-BASED LOCATION UI ---------------- */
+
+  const hideLocationRoles = ["CITIZEN", "SUPER_ADMIN", "CENTRAL_ADMIN"];
+  const showStateOnly = user.role === "STATE_ADMIN";
+  const showStateDistrict = ["DISTRICT_ADMIN", "DEPT_HEAD", "OFFICER"].includes(
     user.role
   );
 
-  const canEditLocation = [
-    "SUPER_ADMIN",
-    "CENTRAL_ADMIN",
-    "STATE_ADMIN",
-    "DISTRICT_ADMIN",
-    "DEPT_HEAD",
-    "OFFICER",
-    "WORKER",
-    "CITIZEN",
-  ].includes(user.role);
-
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="max-w-xl mx-auto space-y-6 bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 rounded-xl shadow-sm">
+
+      {/* HEADER */}
       <h2 className="text-xl font-semibold text-gray-800">
         My Profile
       </h2>
 
       {/* ---------------- Avatar ---------------- */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 bg-white rounded-xl p-4 shadow">
         <img
           src={user.avatar?.url}
           alt="Profile"
@@ -131,7 +123,9 @@ function Profile() {
           <button
             onClick={handleUpdateAvatar}
             disabled={loading}
-            className="mt-2 bg-blue-600 text-white px-3 py-1 rounded text-sm disabled:opacity-50"
+            className="mt-2 bg-gradient-to-r from-blue-600 to-purple-600
+                       text-white px-4 py-1.5 rounded-full text-sm
+                       hover:opacity-90 disabled:opacity-50"
           >
             {loading ? "Updating..." : "Change Photo"}
           </button>
@@ -139,14 +133,13 @@ function Profile() {
       </div>
 
       {/* ---------------- Info ---------------- */}
-      <div className="bg-white rounded shadow p-4 space-y-3">
+      <div className="bg-white rounded-xl shadow p-4 space-y-3">
         <Field label="Name" value={user.name} />
         <Field label="Email" value={user.email} />
-        <Field label="Role" value={user.role} />
+        <Field label="Role" value={user.role.replace("_", " ")} />
 
-        {/* Department: ONLY for DEPT_HEAD / OFFICER / WORKER */}
         {canEditDepartment && (
-          <div className="space-y-2">
+          <div className="space-y-2 pt-2">
             <label className="text-sm text-gray-500">
               Department
             </label>
@@ -154,10 +147,9 @@ function Profile() {
             <select
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
-              className="w-full border px-3 py-2 rounded text-sm"
+              className="w-full border px-3 py-2 rounded-lg text-sm"
             >
               <option value="">Select Department</option>
-
               {DEPARTMENT_OPTIONS.map((dept) => (
                 <option key={dept} value={dept}>
                   {dept}
@@ -168,7 +160,8 @@ function Profile() {
             <button
               onClick={handleUpdateDepartment}
               disabled={loading || !department}
-              className="bg-purple-600 text-white px-4 py-2 rounded text-sm disabled:opacity-50"
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm
+                         hover:bg-purple-700 disabled:opacity-50"
             >
               {loading ? "Updating..." : "Update Department"}
             </button>
@@ -181,40 +174,47 @@ function Profile() {
         />
       </div>
 
-      {/* ---------------- Location Update ---------------- */}
-      {canEditLocation && (
-        <div className="bg-white rounded shadow p-4 space-y-3">
+      {/* ---------------- Location (ROLE RULES APPLIED) ---------------- */}
+      {!hideLocationRoles.includes(user.role) && (
+        <div className="bg-white rounded-xl shadow p-4 space-y-3">
           <h3 className="font-medium text-gray-700">
-            Location (for complaint access)
+            Location Access
           </h3>
 
-          <input
-            value={state}
-            onChange={(e) => setState(e.target.value)}
-            placeholder="State"
-            className="w-full border px-3 py-2 rounded text-sm"
-          />
-
-          {user.role !== "STATE_ADMIN" && (
+          {/* STATE ADMIN → STATE ONLY */}
+          {showStateOnly && (
             <input
-              value={district}
-              onChange={(e) => setDistrict(e.target.value)}
-              placeholder="District"
-              className="w-full border px-3 py-2 rounded text-sm"
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              placeholder="State"
+              className="w-full border px-3 py-2 rounded-lg text-sm"
             />
           )}
 
-          <input
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            placeholder="City"
-            className="w-full border px-3 py-2 rounded text-sm"
-          />
+          {/* DISTRICT ADMIN / DEPT HEAD / OFFICER → STATE + DISTRICT */}
+          {showStateDistrict && (
+            <>
+              <input
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                placeholder="State"
+                className="w-full border px-3 py-2 rounded-lg text-sm"
+              />
+
+              <input
+                value={district}
+                onChange={(e) => setDistrict(e.target.value)}
+                placeholder="District"
+                className="w-full border px-3 py-2 rounded-lg text-sm"
+              />
+            </>
+          )}
 
           <button
             onClick={handleUpdateLocation}
             disabled={loading}
-            className="bg-green-600 text-white px-4 py-2 rounded text-sm disabled:opacity-50"
+            className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm
+                       hover:bg-green-700 disabled:opacity-50"
           >
             {loading ? "Saving..." : "Save Location"}
           </button>
@@ -224,7 +224,7 @@ function Profile() {
       {/* ---------------- Logout ---------------- */}
       <button
         onClick={logout}
-        className="bg-red-600 text-white px-4 py-2 rounded"
+        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
       >
         Logout
       </button>
@@ -238,7 +238,7 @@ function Field({ label, value }) {
   return (
     <div className="flex justify-between text-sm">
       <span className="text-gray-500">{label}</span>
-      <span className="font-medium">
+      <span className="font-medium text-gray-800">
         {value || "—"}
       </span>
     </div>

@@ -27,6 +27,6 @@ export const ADMIN_MENU = [
   {
     label: "Admins",
     path: "/admin/users",
-    roles: ["SUPER_ADMIN", "CENTRAL_ADMIN", "STATE_ADMIN", "DISTRICT_ADMIN"],
+    roles: ["SUPER_ADMIN", "CENTRAL_ADMIN", "STATE_ADMIN", "DISTRICT_ADMIN","DEPT_HEAD"],
     },
 ];

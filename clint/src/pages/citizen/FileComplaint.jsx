@@ -2,7 +2,6 @@ import { useState } from "react";
 import { createComplaint } from "../../services/complaint.service";
 import api from "../../services/api";
 
-
 const CATEGORIES = [
   { value: "GARBAGE", label: "Garbage" },
   { value: "ROADS", label: "Road" },
@@ -29,8 +28,7 @@ function FileComplaint() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [imageFile, setImageFile] = useState(null);
-  
+
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     setForm((prev) => ({
@@ -40,44 +38,44 @@ function FileComplaint() {
   };
 
   const detectLocation = () => {
-      if (!navigator.geolocation) {
-        alert("Geolocation not supported");
-        return;
-      }
+    if (!navigator.geolocation) {
+      alert("Geolocation not supported");
+      return;
+    }
 
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
 
-          const res = await api.get(
-            `/location/reverse?lat=${lat}&lng=${lng}`
-          );
+        const res = await api.get(
+          `/location/reverse?lat=${lat}&lng=${lng}`
+        );
 
-          const data = res.data;
+        const data = res.data;
 
-          setForm((prev) => ({
-            ...prev,
-            city: data.city,
-            district: data.district,
-            state: data.state,
-             pincode: data.pincode || prev.pincode,
-             localAddress:
-              prev.localAddress ||
-              data.suburb ||
-              data.neighbourhood ||
-              "",
-            coordinates: { lat, lng },
-            location: `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
-          }));
-        },
-        () => alert("Location permission denied")
-      );
-    };
-
+        setForm((prev) => ({
+          ...prev,
+          city: data.city,
+          district: data.district,
+          state: data.state,
+          pincode: data.pincode || prev.pincode,
+          localAddress:
+            prev.localAddress ||
+            data.suburb ||
+            data.neighbourhood ||
+            "",
+          coordinates: { lat, lng },
+          location: `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
+        }));
+      },
+      () => alert("Location permission denied")
+    );
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!form.city || !form.district || !form.state) {
       alert("City, District and State are required");
       return;
@@ -95,8 +93,7 @@ function FileComplaint() {
     formData.append("category", form.category);
     formData.append("description", form.description);
     if (form.image) formData.append("image", form.image);
-    
-    // Build location object
+
     if (form.coordinates) {
       const locationObj = {
         address: form.location,
@@ -124,7 +121,8 @@ function FileComplaint() {
         city: "",
         district: "",
         state: "",
-        localAddress: "", 
+        localAddress: "",
+        pincode: "",
       });
     } catch (err) {
       setError(err.response?.data?.message || "Failed to submit complaint");
@@ -134,14 +132,17 @@ function FileComplaint() {
   };
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6
+                    bg-gradient-to-br from-blue-50 via-white to-purple-50
+                    p-6 rounded-xl">
+
       <h2 className="text-xl font-semibold text-gray-800">
         File a Complaint
       </h2>
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded shadow-sm p-6 space-y-4"
+        className="bg-white/90 backdrop-blur rounded-xl shadow-md p-6 space-y-5"
       >
         {/* Category */}
         <div>
@@ -152,7 +153,8 @@ function FileComplaint() {
             name="category"
             value={form.category}
             onChange={handleChange}
-            className="mt-1 w-full rounded border px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm
+                       focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Select category</option>
             {CATEGORIES.map((cat) => (
@@ -173,7 +175,8 @@ function FileComplaint() {
             rows="4"
             value={form.description}
             onChange={handleChange}
-            className="mt-1 w-full rounded border px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm
+                       focus:ring-2 focus:ring-blue-500"
             placeholder="Describe the issue..."
           />
         </div>
@@ -197,41 +200,42 @@ function FileComplaint() {
           <label className="block text-sm font-medium text-gray-700">
             Location Details
           </label>
-          <div className="mt-2 space-y-2">
+
+          <div className="mt-2 space-y-3">
             <div className="flex gap-2">
               <input
                 type="text"
                 name="location"
                 value={form.location}
                 readOnly
-                className="flex-1 rounded border px-3 py-2 text-sm bg-gray-100"
+                className="flex-1 rounded-lg border px-3 py-2 text-sm bg-gray-100"
                 placeholder="Coordinates (auto-detected)"
               />
               <button
                 type="button"
                 onClick={detectLocation}
-                className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+                className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600
+                           px-4 py-2 text-sm text-white hover:opacity-90"
               >
                 📍 Detect My Location
               </button>
             </div>
-            
-            <div className="grid grid-cols-3 gap-2">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
               <input
                 type="text"
                 name="localAddress"
                 value={form.localAddress}
                 onChange={handleChange}
-                className="w-full rounded border px-3 py-2 text-sm"
-                placeholder="Local address / area / landmark (optional)"
+                className="rounded-lg border px-3 py-2 text-sm"
+                placeholder="Local address / landmark (optional)"
               />
-
               <input
                 type="text"
                 name="city"
                 value={form.city}
                 onChange={handleChange}
-                className="rounded border px-3 py-2 text-sm"
+                className="rounded-lg border px-3 py-2 text-sm"
                 placeholder="City"
               />
               <input
@@ -239,7 +243,7 @@ function FileComplaint() {
                 name="district"
                 value={form.district}
                 onChange={handleChange}
-                className="rounded border px-3 py-2 text-sm"
+                className="rounded-lg border px-3 py-2 text-sm"
                 placeholder="District"
               />
               <input
@@ -247,7 +251,7 @@ function FileComplaint() {
                 name="state"
                 value={form.state}
                 onChange={handleChange}
-                className="rounded border px-3 py-2 text-sm"
+                className="rounded-lg border px-3 py-2 text-sm"
                 placeholder="State"
               />
               <input
@@ -255,25 +259,32 @@ function FileComplaint() {
                 name="pincode"
                 value={form.pincode}
                 onChange={handleChange}
-                className="rounded border px-3 py-2 text-sm"
+                className="rounded-lg border px-3 py-2 text-sm"
                 placeholder="Pincode"
               />
-
             </div>
           </div>
         </div>
 
         {/* Messages */}
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && (
+          <p className="text-sm text-red-600 bg-red-50 p-2 rounded">
+            {error}
+          </p>
+        )}
         {success && (
-          <p className="text-sm text-green-600">{success}</p>
+          <p className="text-sm text-green-600 bg-green-50 p-2 rounded">
+            {success}
+          </p>
         )}
 
         {/* Submit */}
         <button
           type="submit"
           disabled={loading}
-          className="rounded bg-blue-600 px-6 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600
+                     px-6 py-2 text-sm text-white font-medium
+                     hover:opacity-90 disabled:opacity-50"
         >
           {loading ? "Submitting..." : "Submit Complaint"}
         </button>

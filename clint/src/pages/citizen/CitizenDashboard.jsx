@@ -3,13 +3,10 @@ import { getAllComplaints } from "../../services/complaint.service";
 import { useAuth } from "../../context/AuthContext";
 import { getMyRewards } from "../../services/reward.service";
 
-
-
 function CitizenDashboard() {
   const { user } = useAuth();
   const [rewardPoints, setRewardPoints] = useState(0);
 
-  
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,18 +16,16 @@ function CitizenDashboard() {
   }, [user]);
 
   useEffect(() => {
-  const loadRewards = async () => {
-    try {
-      const res = await getMyRewards();
-      setRewardPoints(res.totalPoints);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  loadRewards();
-}, []);
-
+    const loadRewards = async () => {
+      try {
+        const res = await getMyRewards();
+        setRewardPoints(res.totalPoints);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    loadRewards();
+  }, []);
 
   const fetchComplaints = async () => {
     try {
@@ -59,17 +54,18 @@ function CitizenDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 rounded-xl">
+
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <StatCard title="Total Complaints" value={total} />
-        <StatCard title="Active Complaints" value={active} />
-        <StatCard title="Resolved Complaints" value={resolved} />
-        <StatCard title="Reward Points" value={rewardPoints} />
+        <StatCard title="Total Complaints" value={total} color="indigo" />
+        <StatCard title="Active Complaints" value={active} color="orange" />
+        <StatCard title="Resolved Complaints" value={resolved} color="green" />
+        <StatCard title="Reward Points" value={rewardPoints} color="purple" />
       </div>
 
       {/* Recent Complaints */}
-      <div className="bg-white rounded shadow-sm">
+      <div className="bg-white/90 backdrop-blur rounded-xl shadow-md overflow-hidden">
         <div className="border-b px-6 py-4">
           <h3 className="font-semibold text-gray-800">
             Recent Complaints
@@ -78,7 +74,7 @@ function CitizenDashboard() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-600">
+            <thead className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
               <tr>
                 <th className="px-6 py-3 text-left">ID</th>
                 <th className="px-6 py-3 text-left">Category</th>
@@ -103,10 +99,10 @@ function CitizenDashboard() {
               {complaints.slice(0, 5).map((c) => (
                 <tr
                   key={c._id}
-                  className="border-t hover:bg-gray-50"
+                  className="border-t hover:bg-gray-50 transition"
                 >
-                  <td className="px-6 py-3">
-                    {c._id.slice(-6)}
+                  <td className="px-6 py-3 font-medium">
+                    #{c._id.slice(-6)}
                   </td>
                   <td className="px-6 py-3">{c.category}</td>
                   <td className="px-6 py-3">
@@ -116,7 +112,7 @@ function CitizenDashboard() {
                     {c.upvotes?.length || 0}
                   </td>
                   <td className="px-6 py-3">
-                    {new Date(c.createdAt).toLocaleDateString()}
+                    {new Date(c.createdAt).toLocaleDateString("en-GB")}
                   </td>
                 </tr>
               ))}
@@ -130,11 +126,23 @@ function CitizenDashboard() {
 
 /* ---------- Helpers ---------- */
 
-function StatCard({ title, value }) {
+function StatCard({ title, value, color }) {
+  const COLORS = {
+    indigo: "from-indigo-500 to-blue-500",
+    orange: "from-orange-500 to-amber-500",
+    green: "from-green-500 to-emerald-500",
+    purple: "from-purple-500 to-pink-500",
+  };
+
   return (
-    <div className="bg-white rounded shadow-sm p-4">
-      <p className="text-xs text-gray-500">{title}</p>
-      <p className="text-2xl font-bold text-gray-800">
+    <div
+      className={`rounded-xl p-4 shadow-md text-white
+        bg-gradient-to-r ${COLORS[color]}`}
+    >
+      <p className="text-xs uppercase tracking-wide opacity-80">
+        {title}
+      </p>
+      <p className="text-2xl font-bold mt-1">
         {value}
       </p>
     </div>
@@ -153,7 +161,7 @@ function StatusBadge({ status }) {
 
   return (
     <span
-      className={`rounded px-2 py-1 text-xs font-medium ${
+      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
         colors[status] || "bg-gray-100 text-gray-600"
       }`}
     >

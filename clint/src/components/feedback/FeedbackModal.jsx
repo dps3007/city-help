@@ -6,7 +6,7 @@ function FeedbackModal({ onClose, onSubmit }) {
   const [comment, setComment] = useState("");
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
       <div className="bg-white rounded-xl p-6 w-[400px]">
         <h2 className="text-xl font-semibold text-center mb-2">
           Your Opinion Matters!

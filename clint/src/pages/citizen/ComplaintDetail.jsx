@@ -2,51 +2,37 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   getComplaintById,
-  upvoteComplaint,
   submitFeedback,
 } from "../../services/complaint.service";
 
+import { useAuth } from "../../context/AuthContext";
 import StatusStepper from "../../components/complaints/StatusStepper";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import FeedbackModal from "../../components/feedback/FeedbackModal";
 import ComplaintMap from "../../components/common/ComplaintMap";
 
-
-
-const STATUS_ORDER = [
-  "SUBMITTED",
-  "VERIFIED",
-  "ASSIGNED",
-  "IN_PROGRESS",
-  "RESOLVED",
-  "CLOSED",
-];
-
 function ComplaintDetail() {
-
- 
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [complaint, setComplaint] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const [upvoting, setUpvoting] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [feedback, setFeedback] = useState({ rating: 5, comment: "" });
-  const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [focusMap, setFocusMap] = useState(false);
 
+  /* ---------------- FETCH ---------------- */
 
-  // fatch complaint details
   const fetchComplaint = async () => {
     try {
       const data = await getComplaintById(id);
-      
-      setComplaint({ ...data.complaint, feedback: data.complaint.feedback || data.feedback || null });  
-
+      setComplaint({
+        ...data.complaint,
+        feedback:
+          data.complaint.feedback || data.feedback || null,
+      });
     } catch (err) {
       setError(
         err?.response?.data?.message || "Failed to load complaint"
@@ -60,40 +46,20 @@ function ComplaintDetail() {
     fetchComplaint();
   }, [id]);
 
+  /* ---------------- FEEDBACK ---------------- */
 
-  // upvote handler
-  const handleUpvote = async () => {
+  const handleSubmitFeedback = async ({ rating, comment }) => {
     try {
-      setUpvoting(true);
-      await upvoteComplaint(id);
-
-      setComplaint((prev) => ({
-        ...prev,
-        upvotes: [...(prev.upvotes || []), "temp"],
-      }));
+      await submitFeedback(id, { rating, comment });
+      alert("Feedback submitted successfully");
+      setShowFeedback(false);
+      fetchComplaint();
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to upvote");
-    } finally {
-      setUpvoting(false);
+      alert(err?.response?.data?.message || "Failed to submit feedback");
     }
   };
 
-  // FEEDBACK SUBMISSION HANDLER
-    const handleSubmitFeedback = async ({ rating, comment }) => {
-      try {
-        await submitFeedback(id, { rating, comment });
-        alert("Feedback submitted successfully");
-        setShowFeedback(false);
-        await fetchComplaint();
-        
-      } catch (err) {
-        alert(err?.response?.data?.message || "Failed to submit feedback");
-      }
-    };
-
-
-  // state handlers
-  if (loading) return <p className="text-gray-600">Loading complaint...</p>;
+  if (loading) return <p className="text-gray-600">Loading complaint…</p>;
 
   if (error)
     return (
@@ -103,23 +69,42 @@ function ComplaintDetail() {
     );
 
   if (!complaint)
-    return <div className="p-4 text-gray-600">Complaint not found</div>;
+    return <p className="text-gray-600">Complaint not found</p>;
 
   const resolvedOrClosed =
     complaint.status === "RESOLVED" ||
     complaint.status === "CLOSED";
 
+  const canGiveFeedback =
+    user?.role === "CITIZEN" &&
+    resolvedOrClosed &&
+    !complaint.feedback;
+
   /* ================= UI ================= */
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded shadow-sm p-6">
+    <div className="space-y-6 max-w-5xl">
+
+      {/* HEADER */}
+      <div className="bg-white rounded-xl shadow p-6">
+        {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="text-sm text-blue-600 hover:underline mb-3"
+          className="
+            inline-flex items-center gap-2
+            px-4 py-2
+            rounded-lg
+            bg-blue-600 text-white
+            text-sm font-medium
+            hover:bg-blue-700
+            transition
+            shadow-sm
+          "
         >
-          ← Back
+          <span className="text-lg leading-none">←</span>
+          Back
         </button>
+
 
         <div className="flex justify-between items-start">
           <div>
@@ -133,22 +118,22 @@ function ComplaintDetail() {
           <Badge status={complaint.status} />
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 text-sm">
           <Detail label="Category" value={complaint.category} />
           <Detail
             label="Created"
-            value={new Date(complaint.createdAt).toLocaleDateString()}
+            value={new Date(complaint.createdAt).toLocaleDateString("en-GB")}
           />
           <Detail label="Priority" value="Normal" />
           <Detail
             label="Upvotes"
-            value={complaint.upvotes?.length || 0}
+            value={complaint.upvoteCount}
           />
         </div>
       </div>
 
-      {/* Description */}
-      <div className="bg-white rounded shadow-sm p-6">
+      {/* DESCRIPTION */}
+      <div className="bg-white rounded-xl shadow p-6">
         <h2 className="text-lg font-semibold mb-3">Description</h2>
         <p className="text-gray-700">{complaint.description}</p>
 
@@ -156,28 +141,17 @@ function ComplaintDetail() {
           <img
             src={complaint.attachments[0].url}
             alt="Complaint"
-            className="mt-4 max-w-md rounded"
+            className="mt-4 max-w-md rounded-lg border"
           />
         )}
       </div>
 
-      {/* Location */}
+      {/* LOCATION */}
       {complaint.location && (
-        <div className="bg-white rounded shadow-sm p-6">
-        <h2 className="text-lg font-semibold mb-3">Location</h2>
-
-          <p className="text-gray-700">
-            {complaint.location?.localAddress && (
-            <>
-              {complaint.location.localAddress},{" "}
-            </>
-          )}
-            {complaint.location.city}, {complaint.location.state}
-          </p>
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg font-semibold">Location</h2>
             {complaint.location?.coordinates && (
-          <div className="bg-white rounded shadow-sm p-6">
-            <h2 className="text-lg font-semibold mb-3 flex justify-between items-center">
-              Location
               <Button
                 onClick={() => {
                   setFocusMap(false);
@@ -187,101 +161,98 @@ function ComplaintDetail() {
               >
                 📍 Go to Location
               </Button>
-            </h2>
-
-            <ComplaintMap
-              lat={complaint.location.coordinates.lat}
-              lng={complaint.location.coordinates.lng}
-              focus={focusMap}
-            />
+            )}
           </div>
-        )}
-  </div>
-)}
 
-      {/* Status */}
-      <div className="bg-white rounded shadow-sm p-6">
+          <p className="text-gray-700 mb-4">
+            {complaint.location.localAddress && (
+              <>{complaint.location.localAddress}, </>
+            )}
+            {complaint.location.city}, {complaint.location.state}
+          </p>
+
+          {complaint.location?.coordinates && (
+            <div className="rounded-lg overflow-hidden border">
+              <ComplaintMap
+                lat={complaint.location.coordinates.lat}
+                lng={complaint.location.coordinates.lng}
+                focus={focusMap}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* PROGRESS */}
+      <div className="bg-white rounded-xl shadow p-6">
         <h2 className="text-lg font-semibold mb-4">Progress</h2>
         <StatusStepper currentStatus={complaint.status} />
       </div>
 
-      {/* Assigned Officer */}
+      {/* ASSIGNED */}
       {complaint.assignedTo && (
-        <div className="bg-white rounded shadow-sm p-6 flex justify-between item">
-          <h2 className="text-lg font-semibold mb-3 ">Assigned Details</h2>
-
-          {/* Assigned To */}
-          <div className="mb-3">
+        <div className="bg-white rounded-xl shadow p-6 grid sm:grid-cols-2 gap-6">
+          <div>
             <p className="text-sm text-gray-500">Assigned To</p>
-            <p className="font-semibold text-gray-800">
-              {complaint.assignedTo.name}
-            </p>
+            <p className="font-semibold">{complaint.assignedTo.name}</p>
             <p className="text-sm text-gray-500">
               {complaint.assignedTo.email}
             </p>
           </div>
 
-          {/* Assigned By (verified by)*/}
-            {complaint.verifiedBy && (
-              <div>
-                <p className="text-sm text-gray-500">Assigned By</p>
-                <p className="font-semibold text-gray-800">
-                  {complaint.verifiedBy.name}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {complaint.verifiedBy.email}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-
-      {/* Feedback */}
-      <div className="bg-white rounded shadow-sm p-6">
-        <h2 className="text-lg font-semibold mb-4">Feedback</h2>
-
-        <div className="flex items-center gap-3">
-          {resolvedOrClosed ? (
-            complaint.feedback ? (
-              <span className="text-green-600 font-semibold">
-                ✅ Feedback Submitted
-              </span>
-            ) : (
-              <Button
-                onClick={() => setShowFeedback(true)}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Submit Feedback
-              </Button>
-            )
-          ) : null}
-        </div>
-      </div>
-
-      {/* Feedback Card */}
-      {resolvedOrClosed && complaint.feedback && (
-        <div className="bg-white rounded p-6 ">
-          <div className="flex justify-between mb-4">
-            <div className="flex gap-1 text-blue-800">
-              {Array.from({ length: complaint.feedback.rating }).map((_, i) => (
-                <span key={i}>★</span>
-              ))}
+          {complaint.verifiedBy && (
+            <div>
+              <p className="text-sm text-gray-500">Assigned By</p>
+              <p className="font-semibold">{complaint.verifiedBy.name}</p>
+              <p className="text-sm text-gray-500">
+                {complaint.verifiedBy.email}
+              </p>
             </div>
-            <span className="text-sm text-black">
-              {new Date(
-                complaint.feedback.createdAt
-              ).toLocaleDateString("en-GB")}
-            </span>
-          </div>
-
-          <p className="text-black text-lg">
-            {complaint.feedback.comment}
-          </p>
+          )}
         </div>
       )}
 
-      {/* Feedback Modal */}
+      {/* FEEDBACK */}
+      {resolvedOrClosed && (
+        <div className="bg-white rounded-xl shadow p-6 space-y-4">
+          <h2 className="text-lg font-semibold">Feedback</h2>
+
+          {complaint.feedback ? (
+            <div>
+              <div className="flex justify-between mb-3">
+                <div className="flex gap-1 text-blue-700">
+                  {Array.from({
+                    length: complaint.feedback.rating,
+                  }).map((_, i) => (
+                    <span key={i}>★</span>
+                  ))}
+                </div>
+                <span className="text-sm text-gray-500">
+                  {new Date(
+                    complaint.feedback.createdAt
+                  ).toLocaleDateString()}
+                </span>
+              </div>
+              <p className="text-gray-800">
+                {complaint.feedback.comment}
+              </p>
+            </div>
+          ) : canGiveFeedback ? (
+            <Button
+              onClick={() => setShowFeedback(true)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Submit Feedback
+            </Button>
+          ) : (
+            <p className="text-sm text-gray-500">
+              Only the citizen who raised this complaint can submit feedback.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* FEEDBACK MODAL (FIXED Z-INDEX) */}
       {showFeedback && (
         <FeedbackModal
           onClose={() => setShowFeedback(false)}
@@ -292,11 +263,11 @@ function ComplaintDetail() {
   );
 }
 
-/* ================= SMALL COMPONENT ================= */
+/* ---------- Small Component ---------- */
 function Detail({ label, value }) {
   return (
     <div>
-      <p className="text-gray-500">{label}</p>
+      <p className="text-gray-500 text-sm">{label}</p>
       <p className="font-semibold text-gray-800">
         {value || "—"}
       </p>

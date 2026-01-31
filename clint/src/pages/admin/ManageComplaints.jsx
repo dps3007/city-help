@@ -23,6 +23,15 @@ const STATUS_OPTIONS = [
   "CLOSED",
 ];
 
+const STATUS_COLORS = {
+  SUBMITTED: "bg-gray-100 text-gray-700",
+  VERIFIED: "bg-blue-100 text-blue-700",
+  ASSIGNED: "bg-yellow-100 text-yellow-700",
+  IN_PROGRESS: "bg-orange-100 text-orange-700",
+  RESOLVED: "bg-green-100 text-green-700",
+  CLOSED: "bg-purple-100 text-purple-700",
+};
+
 const PAGE_SIZE = 10;
 
 /* ---------------- helpers ---------------- */
@@ -65,16 +74,13 @@ function ManageComplaints() {
     }
   };
 
-  /* ---------------- status actions ---------------- */
+  /* ---------------- STATUS ACTIONS ---------------- */
 
   const handleStatusChange = async (complaint, nextStatus) => {
     try {
       setUpdatingId(complaint._id);
 
-      if (complaint.status === "CLOSED") {
-        alert("Complaint already closed");
-        return;
-      }
+      if (complaint.status === "CLOSED") return;
 
       switch (nextStatus) {
         case "VERIFIED":
@@ -110,14 +116,13 @@ function ManageComplaints() {
 
       await loadComplaints();
     } catch (err) {
-      console.error(err);
       alert(err?.response?.data?.message || "Action not allowed");
     } finally {
       setUpdatingId(null);
     }
   };
 
-  /* ---------------- FILTERING (ROLE + CATEGORY + LOCATION) ---------------- */
+  /* ---------------- FILTERING ---------------- */
 
   const filteredComplaints = complaints.filter((c) => {
     const userState = normalize(user?.location?.state);
@@ -128,56 +133,53 @@ function ManageComplaints() {
     const complaintDistrict = normalize(c?.location?.district);
     const complaintCategory = normalize(c?.category);
 
-  // SUPER / CENTRAL 
-    if (["SUPER_ADMIN", "CENTRAL_ADMIN"].includes(role)) { return true; }  
+    /* ---------- ROLE FILTER (UNCHANGED) ---------- */
 
-    /* ---------- STATE ADMIN ---------- */
-    if (role === "STATE_ADMIN") {
-      return complaintState === userState;
-    }
+    let roleAllowed = false;
 
-    /* ---------- DISTRICT ADMIN ---------- */
-    if (role === "DISTRICT_ADMIN") {
-      return (
+    if (["SUPER_ADMIN", "CENTRAL_ADMIN"].includes(role)) roleAllowed = true;
+
+    if (role === "STATE_ADMIN")
+      roleAllowed = complaintState === userState;
+
+    if (role === "DISTRICT_ADMIN")
+      roleAllowed =
         complaintState === userState &&
-        complaintDistrict === userDistrict
-      );
-    }
+        complaintDistrict === userDistrict;
 
-    /* ---------- DEPT_HEAD ---------- */
-    if (role === "DEPT_HEAD") {
-      return (
+    if (role === "DEPT_HEAD")
+      roleAllowed =
         complaintDistrict === userDistrict &&
-        complaintCategory === userDepartment
-      );
-    }
+        complaintCategory === userDepartment;
 
-    /* ---------- OFFICER ---------- */
-    if (role === "OFFICER") {
-      return (
+    if (role === "OFFICER")
+      roleAllowed =
         complaintCategory === userDepartment &&
-        (
-          c.assignedTo?._id === user._id ||
-          c.resolvedBy === user._id
-        )
-      );
-    }
+        (c.assignedTo?._id === user._id ||
+          c.resolvedBy === user._id);
 
-    /* ---------- WORKER ---------- */
-    if (role === "WORKER") {
-      return (
+    if (role === "WORKER")
+      roleAllowed =
         complaintCategory === userDepartment &&
-        (
-          c.assignedWorker?._id === user._id ||
-          c.resolvedBy === user._id
-        )
-      );
-    }
+        (c.assignedWorker?._id === user._id ||
+          c.resolvedBy === user._id);
 
-    return false;
+    if (!roleAllowed) return false;
+
+    /* ---------- SEARCH FILTER (FIXED) ---------- */
+
+    if (!search.trim()) return true;
+
+    const q = normalize(search);
+
+    return (
+      c._id.toLowerCase().includes(q) ||
+      complaintCategory.includes(q) ||
+      normalize(c.status).includes(q)
+    );
   });
 
-
+  
   /* ---------------- PAGINATION ---------------- */
 
   const totalPages = Math.ceil(filteredComplaints.length / PAGE_SIZE);
@@ -194,7 +196,8 @@ function ManageComplaints() {
   /* ---------------- UI ---------------- */
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 rounded-lg">
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-800">
@@ -203,44 +206,47 @@ function ManageComplaints() {
 
         <input
           type="text"
-          placeholder="Search by ID / Category / Status"
+          placeholder="Search complaints..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border px-3 py-2 rounded text-sm w-72"
+          className="border px-3 py-2 rounded-lg text-sm w-72"
         />
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded shadow-sm overflow-x-auto">
+      <div className="bg-white/90 backdrop-blur rounded-xl shadow-md overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600">
+          <thead className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
             <tr>
-              <th className="px-4 py-3">ID</th>
-              <th className="px-4 py-3">Category</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Upvotes</th>
-              <th className="px-4 py-3">Assigned To</th>
-              <th className="px-4 py-3">Created</th>
-              <th className="px-4 py-3">Resolved</th>
-              <th className="px-4 py-3">View</th>
+              <th className="px-4 py-3 text-left">ID</th>
+              <th className="px-4 py-3 text-left">Category</th>
+              <th className="px-4 py-3 text-left">Status</th>
+              <th className="px-4 py-3 text-left">Upvotes</th>
+              <th className="px-4 py-3 text-left">Assigned</th>
+              <th className="px-4 py-3 text-left">Created</th>
+              <th className="px-4 py-3 text-left">Resolved</th>
+              <th className="px-4 py-3 text-left">View</th>
             </tr>
           </thead>
 
           <tbody>
             {paginatedComplaints.length === 0 && (
               <tr>
-                <td
-                  colSpan="8"
-                  className="px-6 py-6 text-center text-gray-500"
-                >
+                <td colSpan="8" className="px-6 py-6 text-center text-gray-500">
                   No complaints found
                 </td>
               </tr>
             )}
 
             {paginatedComplaints.map((c) => (
-              <tr key={c._id} className="border-t hover:bg-gray-50">
-                <td className="px-4 py-3">{c._id.slice(-6)}</td>
+              <tr
+                key={c._id}
+                className="border-t hover:bg-gray-50 transition"
+              >
+                <td className="px-4 py-3 font-medium">
+                  #{c._id.slice(-6)}
+                </td>
+
                 <td className="px-4 py-3">{c.category}</td>
 
                 <td className="px-4 py-3">
@@ -250,7 +256,8 @@ function ManageComplaints() {
                     onChange={(e) =>
                       handleStatusChange(c, e.target.value)
                     }
-                    className="border rounded px-2 py-1 text-sm"
+                    className={`px-2 py-1 rounded-full text-xs font-semibold
+                      ${STATUS_COLORS[c.status]}`}
                   >
                     {STATUS_OPTIONS.map((s) => (
                       <option key={s} value={s}>
@@ -279,7 +286,7 @@ function ManageComplaints() {
                 <td className="px-4 py-3">
                   <Link
                     to={`/complaints/${c._id}`}
-                    className="text-blue-600 hover:underline"
+                    className="text-blue-600 font-medium hover:underline"
                   >
                     View
                   </Link>
@@ -296,19 +303,19 @@ function ManageComplaints() {
           <button
             disabled={page === 1}
             onClick={() => setPage((p) => p - 1)}
-            className="px-3 py-1 border rounded disabled:opacity-50"
+            className="px-4 py-1 rounded-full bg-white shadow disabled:opacity-50"
           >
             Prev
           </button>
 
-          <span className="text-sm">
+          <span className="text-sm font-medium">
             Page {page} / {totalPages}
           </span>
 
           <button
             disabled={page === totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="px-3 py-1 border rounded disabled:opacity-50"
+            className="px-4 py-1 rounded-full bg-white shadow disabled:opacity-50"
           >
             Next
           </button>

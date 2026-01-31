@@ -5,38 +5,28 @@ import { Link } from "react-router-dom";
 import { getGlobalLeaderboard } from "../../services/leaderboard.service";
 import { useAuth } from "../../context/AuthContext";
 
-
 function Rewards() {
   const [points, setPoints] = useState(0);
   const [rewards, setRewards] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const { user } = useAuth();
   const [rank, setRank] = useState(null);
 
   useEffect(() => {
-  const fetchRank = async () => {
-    try {
-      const leaderboard = await getGlobalLeaderboard();
-
-      const index = leaderboard.findIndex(
-        (u) => u._id === user?._id
-      );
-
-      if (index !== -1) {
-        setRank(index + 1);
+    const fetchRank = async () => {
+      try {
+        const leaderboard = await getGlobalLeaderboard();
+        const index = leaderboard.findIndex(
+          (u) => u._id === user?._id
+        );
+        if (index !== -1) setRank(index + 1);
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error("Failed to fetch rank", err);
-    }
-  };
+    };
 
-  if (user?._id) {
-    fetchRank();
-  }
-}, [user]);
-
-
+    if (user?._id) fetchRank();
+  }, [user]);
 
   const MILESTONES = [
     { points: 50, badge: "🌟", level: "Novice", description: "Earn 50 points" },
@@ -48,16 +38,13 @@ function Rewards() {
   useEffect(() => {
     const fetchRewards = async () => {
       try {
-        const data = await getMyRewards(); // ✅ BACKEND SOURCE
+        const data = await getMyRewards();
         setPoints(data.totalPoints || 0);
         setRewards(data.rewards || []);
-      } catch (error) {
-        console.error("Failed to load rewards", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchRewards();
   }, []);
 
@@ -71,107 +58,98 @@ function Rewards() {
   }
 
   return (
-    <div className="max-w-4xl space-y-6">
-      {/* Header */}
+    <div className="max-w-5xl space-y-8">
+
+      {/* HEADER */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">
+        <h1 className="text-3xl font-bold text-gray-800">
           Rewards & Points
         </h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Earn points by contributing to your community
+        <p className="text-gray-500 mt-1">
+          Track your community contributions and achievements
         </p>
       </div>
 
-      
-{/* Total Points Card */}
-<div className="bg-linear-to-r from-blue-600 to-purple-600 rounded shadow-lg p-8 text-white flex items-center justify-between">
-  
-  {/* Left */}
-  <div>
-    <p className="text-sm font-semibold opacity-90">
-      Total Points
-    </p>
-    <h2 className="text-5xl font-bold">{points}</h2>
-    <p className="text-sm mt-2 opacity-90">
-      Community contribution score
-    </p>
-  </div>
+      {/* TOTAL POINTS CARD */}
+      <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-white shadow-lg flex flex-col sm:flex-row justify-between gap-6">
+        <div>
+          <p className="text-sm opacity-90">Total Points</p>
+          <h2 className="text-5xl font-extrabold mt-1">{points}</h2>
+          <p className="text-sm mt-2 opacity-90">
+            Community contribution score
+          </p>
+        </div>
 
-  {/* Right */}
-  <div className="text-right">
-    <p className="text-sm opacity-90">
-      Your Rank
-    </p>
-    <p className="text-3xl font-bold mt-1">
-      {rank !== null ? `#${rank}` : "—"}
-    </p>
+        <div className="sm:text-right">
+          <p className="text-sm opacity-90">Your Rank</p>
+          <p className="text-3xl font-bold mt-1">
+            {rank !== null ? `#${rank}` : "—"}
+          </p>
 
-    <Link
-      to="/leaderboard"
-      className="inline-block mt-3 text-sm font-medium underline opacity-90 hover:opacity-100"
-    >
-      View Leaderboard →
-    </Link>
-  </div>
+          <Link
+            to="/leaderboard"
+            className="inline-block mt-3 text-sm font-medium underline hover:opacity-100 opacity-90"
+          >
+            View Leaderboard →
+          </Link>
+        </div>
+      </div>
 
-</div>
-
-
-      {/* Progress to Next Milestone */}
+      {/* NEXT MILESTONE */}
       {nextMilestone && (
-        <div className="bg-white rounded shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex justify-between items-center mb-3">
             <h3 className="font-semibold text-gray-800">
               Next Milestone
             </h3>
             <span className="text-sm text-gray-500">
-              {points} / {nextMilestone.points} points
+              {points} / {nextMilestone.points} pts
             </span>
           </div>
 
           <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
             <div
-              className="bg-linear-to-r from-blue-500 to-purple-500 h-full transition-all"
+              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
 
-          <div className="mt-4 p-4 bg-blue-50 rounded border border-blue-200">
-            <p className="text-lg font-semibold text-blue-600">
-              {nextMilestone.badge} {nextMilestone.level}
-            </p>
-            <p className="text-sm text-blue-700">
-              {nextMilestone.description}
-            </p>
+          <div className="mt-4 flex items-center gap-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="text-3xl">{nextMilestone.badge}</div>
+            <div>
+              <p className="font-semibold text-blue-700">
+                {nextMilestone.level}
+              </p>
+              <p className="text-sm text-blue-600">
+                {nextMilestone.description}
+              </p>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Achievements */}
-      <div className="bg-white rounded shadow-sm p-6">
+      {/* ACHIEVEMENTS */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
         <h3 className="font-semibold text-gray-800 mb-4">
           Achievements
         </h3>
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {MILESTONES.map((milestone, idx) => {
-            const achieved = points >= milestone.points;
+          {MILESTONES.map((m, idx) => {
+            const achieved = points >= m.points;
             return (
               <div
                 key={idx}
-                className={`p-4 rounded border text-center transition ${
+                className={`rounded-xl p-4 text-center transition ${
                   achieved
-                    ? "bg-amber-50 border-amber-300"
-                    : "bg-gray-50 border-gray-300 opacity-50"
+                    ? "bg-amber-50 border border-amber-300 shadow-sm"
+                    : "bg-gray-50 border border-gray-200 opacity-60"
                 }`}
               >
-                <div className="text-3xl mb-2">
-                  {milestone.badge}
-                </div>
-                <p className="font-semibold text-gray-800 text-sm">
-                  {milestone.level}
-                </p>
-                <p className="text-xs text-gray-600 mt-1">
-                  {milestone.points} pts
+                <div className="text-4xl">{m.badge}</div>
+                <p className="font-semibold mt-2">{m.level}</p>
+                <p className="text-xs text-gray-600">
+                  {m.points} pts
                 </p>
                 {achieved && (
                   <p className="text-xs text-green-600 mt-2 font-semibold">
@@ -184,19 +162,19 @@ function Rewards() {
         </div>
       </div>
 
-      {/* Reward History */}
+      {/* REWARD HISTORY */}
       <RewardHistory history={rewards} />
 
-      {/* How It Works */}
-      <div className="bg-blue-50 rounded shadow-sm p-6 border border-blue-200">
+      {/* HOW IT WORKS */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
         <h3 className="font-semibold text-gray-800 mb-3">
           How It Works
         </h3>
         <ul className="space-y-2 text-sm text-gray-700">
-          <li>✓ Complaint verified: +3 points</li>
-          <li>✓ Complaint resolved: +4 points</li>
-          <li>✓ Feedback submitted: +3 points</li>
-          <li className="font-semibold">
+          <li>✓ Complaint verified: <b>+3 points</b></li>
+          <li>✓ Complaint resolved: <b>+4 points</b></li>
+          <li>✓ Feedback submitted: <b>+3 points</b></li>
+          <li className="font-semibold text-blue-700">
             Total per resolved complaint: 10 points
           </li>
         </ul>
