@@ -112,25 +112,6 @@ export const createComplaint = asyncHandler(async (req, res) => {
     { category, description, attachments, location },
     req.user
   );
-
-  // 🔴 REAL-TIME: new complaint
-  if (complaint?.location?.district) {
-    io.to(`district:${complaint.location.district}`).emit(
-      "complaint:new",
-      complaint
-    );
-  }
-
-  if (complaint?.location?.state) {
-    io.to(`state:${complaint.location.state}`).emit(
-      "complaint:new",
-      complaint
-    );
-  }
-
-  // central feed
-  io.to("india").emit("complaint:new", complaint);
-
   
   return res.status(201).json(
     new ApiResponse({ 
@@ -225,17 +206,6 @@ export const verifyComplaint = asyncHandler(async (req, res) => {
   complaint.verifiedAt = new Date();
   await complaint.save();
 
-  // 🔴 REAL-TIME: complaint verified
-  io.to(`district:${complaint.location.district}`).emit(
-    "complaint:verified",
-    {
-      complaintId: complaint._id,
-      officer,
-      status: complaint.status,
-    }
-  );
-
-
   // Fetch citizen
   const citizen = await User.findById(complaint.citizen);
   if (!citizen) {
@@ -296,16 +266,6 @@ export const assignComplaint = asyncHandler(async (req, res) => {
   complaint.status = "ASSIGNED";
   await complaint.save();
 
-  // 🔴 REAL-TIME: complaint assigned
-  io.to(`district:${complaint.location.district}`).emit(
-    "complaint:assigned",
-    {
-      complaintId: complaint._id,
-      officer,
-      status: complaint.status,
-    }
-  );
-
   // 🔔 Officer notification
   await sendNotification({
     userId: officer._id,
@@ -361,15 +321,6 @@ export const startWork = asyncHandler(async (req, res) => {
   complaint.workStartedAt = new Date();
   await complaint.save();
 
-  // 🔴 REAL-TIME: work started
-  io.to(`district:${complaint.location.district}`).emit(
-    "complaint:started",
-    {
-      complaintId: complaint._id,
-      status: complaint.status,
-    }
-  );
-
   const citizen = await User.findById(complaint.citizen);
   if (!citizen) {
     throw new ApiError(404, "Citizen not found");
@@ -415,15 +366,6 @@ export const resolveComplaint = asyncHandler(async (req, res) => {
   complaint.resolvedBy = user._id;
   complaint.resolvedAt = new Date();
   await complaint.save();
-
-  // 🔴 REAL-TIME: complaint resolved
-  io.to(`district:${complaint.location.district}`).emit(
-    "complaint:resolved",
-    {
-      complaintId: complaint._id,
-      status: complaint.status,
-    }
-  );
 
   const citizen = await User.findById(complaint.citizen); 
   if (!citizen) {
@@ -476,16 +418,7 @@ export const closeComplaint = asyncHandler(async (req, res) => {
   complaint.closedBy = user._id;       
   complaint.closedAt = new Date();   
   await complaint.save();
-
-  // 🔴 REAL-TIME: complaint closed
-  io.to(`district:${complaint.location.district}`).emit(
-    "complaint:closed",
-    {
-      complaintId: complaint._id,
-      status: complaint.status,
-    }
-  );
-
+  
   const citizen = await User.findById(complaint.citizen);
   if (!citizen) {
     throw new ApiError(404, "Citizen not found");

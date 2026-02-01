@@ -61,10 +61,6 @@ export function AuthProvider({ children }) {
       // 🔥 common feed room (ALL ADMINS WHO CAN SEE FEED)
       socket.emit("join:feed");
 
-      // 🔴 central / super admin extra power
-      if (["CENTRAL_ADMIN", "SUPER_ADMIN"].includes(user.role)) {
-        socket.emit("join:central");
-      }
 
       console.log("🟢 joined realtime rooms", {
         district,
