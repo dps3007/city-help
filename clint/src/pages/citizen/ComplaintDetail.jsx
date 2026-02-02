@@ -28,12 +28,7 @@ function ComplaintDetail() {
   const fetchComplaint = async () => {
     try {
       const data = await getComplaintById(id);
-      setComplaint({
-        ...data.complaint,
-        feedback:
-          data.complaint.feedback || data.feedback || null,
-           municipal: data.municipal || null,
-      });
+      setComplaint(data.complaint);
     } catch (err) {
       setError(
         err?.response?.data?.message || "Failed to load complaint"
@@ -186,7 +181,7 @@ function ComplaintDetail() {
       )}
 
       {/* MUNICIPAL */}
-      {complaint.municipal && (
+      {complaint.municipalId && (
         <div className="bg-white rounded-xl shadow p-6">
           <h2 className="text-lg font-semibold mb-2">
             Municipal Authority
@@ -195,15 +190,15 @@ function ComplaintDetail() {
           <div className="grid sm:grid-cols-3 gap-4 text-sm">
             <Detail
               label="Municipal Name"
-              value={complaint.municipal.name}
+              value={complaint.municipalId.name}
             />
             <Detail
               label="Code"
-              value={complaint.municipal.code}
+              value={complaint.municipalId.code}
             />
             <Detail
               label="Jurisdiction"
-              value={`${complaint.municipal.district}, ${complaint.municipal.state}`}
+              value={`${complaint.municipalId.location.district}, ${complaint.municipalId.location.state}`}
             />
           </div>
         </div>

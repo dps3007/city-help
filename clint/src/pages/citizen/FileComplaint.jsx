@@ -203,14 +203,16 @@ function FileComplaint() {
 
           <div className="mt-2 space-y-3">
             <div className="flex gap-2">
-              <input
-                type="text"
-                name="location"
-                value={form.location}
-                readOnly
-                className="flex-1 rounded-lg border px-3 py-2 text-sm bg-gray-100"
-                placeholder="Coordinates (auto-detected)"
-              />
+<input
+        type="text"
+        name="location"
+        value={form.location}
+        onChange={(e) =>
+          setForm({ ...form, location: e.target.value })
+        }
+        className="flex-1 rounded-lg border px-3 py-2 text-sm"
+        placeholder="Enter coordinates (lat, lng)"
+      />
               <button
                 type="button"
                 onClick={detectLocation}
