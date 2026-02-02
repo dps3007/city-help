@@ -4,6 +4,8 @@ import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
+import Municipal from "../models/municipal.model.js";
+
 
 //updateAvtar
 export const updateAvatar = asyncHandler(async (req, res) => {
@@ -54,16 +56,17 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
 
 // Update current logged-in user profile
 export const updateCurrentUser = asyncHandler(async (req, res) => {
-  const { name, email, state, district, city, department } = req.body;
+  const { name, email, state, district, city, department, municipalId } = req.body;
 
-  // ❌ nothing provided
+
   if (
     name === undefined &&
     email === undefined &&
     state === undefined &&
     district === undefined &&
     city === undefined &&
-    department === undefined
+    department === undefined  &&
+    municipalId === undefined
   ) {
     throw new ApiError(
       400,
@@ -114,7 +117,7 @@ export const updateCurrentUser = asyncHandler(async (req, res) => {
       city?.trim().toLowerCase() || null;
   }
 
-  /* ---------- department (🔥 FIX) ---------- */
+  /* ---------- department---------- */
   if (department !== undefined) {
     const allowedRoles = ["DEPT_HEAD", "OFFICER", "WORKER"];
 
@@ -139,6 +142,25 @@ export const updateCurrentUser = asyncHandler(async (req, res) => {
     }
 
     updateFields.department = department;
+  }
+
+  /* ---------- municipalId ---------- */
+  if (municipalId !== undefined) {
+    const allowedRoles = [
+      "DISTRICT_ADMIN",
+      "DEPT_HEAD",
+      "OFFICER",
+      "WORKER",
+    ];
+
+    if (!allowedRoles.includes(req.user.role)) {
+      throw new ApiError(
+        403,
+        "You are not allowed to update municipalId"
+      );
+    }
+
+    updateFields.municipalId = municipalId;
   }
 
   const updatedUser = await User.findByIdAndUpdate(

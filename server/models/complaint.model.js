@@ -155,6 +155,11 @@ const complaintSchema = new Schema(
       default: "NORMAL",
     },
 
+    municipalId: {
+      type: String,
+      index: true,
+    },
+
     aiCategory: String,
     aiConfidence: {
       type: Number,

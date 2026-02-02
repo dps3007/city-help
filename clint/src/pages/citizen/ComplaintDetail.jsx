@@ -32,6 +32,7 @@ function ComplaintDetail() {
         ...data.complaint,
         feedback:
           data.complaint.feedback || data.feedback || null,
+           municipal: data.municipal || null,
       });
     } catch (err) {
       setError(
@@ -144,6 +145,7 @@ function ComplaintDetail() {
             className="mt-4 max-w-md rounded-lg border"
           />
         )}
+        
       </div>
 
       {/* LOCATION */}
@@ -180,6 +182,30 @@ function ComplaintDetail() {
               />
             </div>
           )}
+        </div>
+      )}
+
+      {/* MUNICIPAL */}
+      {complaint.municipal && (
+        <div className="bg-white rounded-xl shadow p-6">
+          <h2 className="text-lg font-semibold mb-2">
+            Municipal Authority
+          </h2>
+
+          <div className="grid sm:grid-cols-3 gap-4 text-sm">
+            <Detail
+              label="Municipal Name"
+              value={complaint.municipal.name}
+            />
+            <Detail
+              label="Code"
+              value={complaint.municipal.code}
+            />
+            <Detail
+              label="Jurisdiction"
+              value={`${complaint.municipal.district}, ${complaint.municipal.state}`}
+            />
+          </div>
         </div>
       )}
 

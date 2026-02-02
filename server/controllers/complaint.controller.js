@@ -9,6 +9,7 @@ import { sendNotification } from "./notification.controller.js";
 import User from "../models/user.model.js";
 import { Feedback } from "../models/feedback.model.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
+import Municipal from "../models/municipal.model.js";
 
 
 export const getAllComplaints = asyncHandler(async (req, res) => {
@@ -16,8 +17,11 @@ export const getAllComplaints = asyncHandler(async (req, res) => {
   const { department } = req.query;
   const { role, location } = req.user;
 
-
   const filter = {};
+
+  if (req.user.municipalId) {
+    filter.municipalId = req.user.municipalId;
+  }
 
   // department-wise filter
   if (department) {
@@ -31,7 +35,7 @@ if (role === "STATE_ADMIN") {
   };
 }
 
-  // 🔥 DISTRICT ADMIN
+  //  DISTRICT ADMIN
   if (role === "DISTRICT_ADMIN") {
     filter["location.state"] = {
       $regex: `^${location.state}$`,
@@ -43,7 +47,7 @@ if (role === "STATE_ADMIN") {
     };
   }
 
-  // 🔥 CITY ADMIN (future-safe)
+  // CITY ADMIN (future-safe)
   if (role === "CITY_ADMIN") {
     filter["location.state"] = {
       $regex: `^${location.state}$`,
@@ -67,7 +71,6 @@ if (role === "STATE_ADMIN") {
   filter.assignedTo = req.user._id;
 }
 
-
   const complaints = await Complaint.find(filter)
     .populate("citizen", "name email")
     .populate("verifiedBy", "name email role")
@@ -77,46 +80,77 @@ if (role === "STATE_ADMIN") {
   res.status(200).json(complaints);
 });
 
-// Create a new complaint
 export const createComplaint = asyncHandler(async (req, res) => {
   const { category, description, location: locationStr } = req.body;
   const file = req.file;
 
-  if (!req.file) {
+  if (!file) {
     throw new ApiError(400, "Complaint image is required");
   }
 
+  // 🔹 parse location
   let location = null;
   if (locationStr) {
     try {
-      location = typeof locationStr === "string" ? JSON.parse(locationStr) : locationStr;
-    } catch (e) {
-      location = { address: locationStr };
+      location =
+        typeof locationStr === "string"
+          ? JSON.parse(locationStr)
+          : locationStr;
+    } catch {
+      throw new ApiError(400, "Invalid location format");
     }
   }
 
-  // Build attachments array if image uploaded
-  const attachments = [];
-
-  if (file) {
-    const result = await uploadToCloudinary(file.buffer);
-
-
-    attachments.push({
-      url: result.secure_url, 
-      type: "IMAGE",
-    });
+  if (
+    !location?.coordinates?.lat ||
+    !location?.coordinates?.lng
+  ) {
+    throw new ApiError(400, "Location coordinates required");
   }
 
+  // 🔹 upload image
+  const result = await uploadToCloudinary(file.buffer);
+  const attachments = [
+    {
+      url: result.secure_url,
+      type: "IMAGE",
+    },
+  ];
+
+  // 🔹 create complaint (existing logic untouched)
   const complaint = await ComplaintService.createComplaint(
     { category, description, attachments, location },
     req.user
   );
-  
+
+  // MUNICIPAL AUTO-DETECTION 
+  const municipal = await Municipal.findOne({
+    boundary: {
+      $geoIntersects: {
+        $geometry: {
+          type: "Point",
+          coordinates: [
+            location.coordinates.lng,
+            location.coordinates.lat,
+          ],
+        },
+      },
+    },
+  });
+
+  if (municipal) {
+    complaint.municipalId = municipal.code;
+    await complaint.save();
+  }
+
+  console.log("POINT:", location.coordinates.lng, location.coordinates.lat);
+console.log("FOUND MUNICIPAL:", municipal);
+
+
   return res.status(201).json(
-    new ApiResponse({ 
+    new ApiResponse({
       message: "Complaint created successfully",
-      data: { complaint }
+      data: { complaint },
     })
   );
 });
@@ -151,12 +185,13 @@ export const getComplaints = asyncHandler(async (req, res) => {
 // Get complaint by ID with access control
 export const getComplaintById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const user = req.user._id;
+  const user = req.user;
 
   const complaint = await Complaint.findById(id)
   .populate("feedback")
   .populate("assignedTo", "name email role")
   .populate("verifiedBy", "name email role");
+
   if (!complaint) {
     throw new ApiError(404, "Complaint not found");
   }
@@ -176,9 +211,19 @@ export const getComplaintById = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Access denied");
   }
 
+   // 🏛️ MUNICIPAL ENRICHMENT (ONLY ADDITION)
+  let municipal = null;
+  if (complaint.municipalId) {
+    municipal = await Municipal.findOne({
+      code: complaint.municipalId,
+    }).select("name code district state");
+  }
+
   return res.status(201).json(
     new ApiResponse({ message: "Complaint fetched successfully",
-      data : {complaint}
+      data : {complaint,
+        municipal,
+      }
     })
   );
 });
@@ -555,6 +600,10 @@ export const getFeed = asyncHandler(async (req, res) => {
   let filter = {
     attachments: { $exists: true, $not: { $size: 0 } },
   };
+
+  if (req.user.municipalId) {
+  filter.municipalId = req.user.municipalId;
+}
 
   // 🟢 DISTRICT LEVEL
   if (
