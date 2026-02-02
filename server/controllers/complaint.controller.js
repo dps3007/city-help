@@ -10,6 +10,8 @@ import User from "../models/user.model.js";
 import { Feedback } from "../models/feedback.model.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 import Municipal from "../models/municipal.model.js";
+import { reverseGeocode } from "../utils/reverseGeocode.js";
+
 
 
 export const getAllComplaints = asyncHandler(async (req, res) => {
@@ -88,17 +90,15 @@ export const createComplaint = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Complaint image is required");
   }
 
-  // 🔹 parse location
+  /* ------------------ PARSE LOCATION ------------------ */
   let location = null;
-  if (locationStr) {
-    try {
-      location =
-        typeof locationStr === "string"
-          ? JSON.parse(locationStr)
-          : locationStr;
-    } catch {
-      throw new ApiError(400, "Invalid location format");
-    }
+  try {
+    location =
+      typeof locationStr === "string"
+        ? JSON.parse(locationStr)
+        : locationStr;
+  } catch {
+    throw new ApiError(400, "Invalid location format");
   }
 
   if (
@@ -108,45 +108,40 @@ export const createComplaint = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Location coordinates required");
   }
 
-  // 🔹 upload image
-  const result = await uploadToCloudinary(file.buffer);
+  /* ------------------ IMAGE UPLOAD ------------------ */
+  const upload = await uploadToCloudinary(file.buffer);
   const attachments = [
     {
-      url: result.secure_url,
+      url: upload.secure_url,
       type: "IMAGE",
     },
   ];
 
-  // 🔹 create complaint (existing logic untouched)
+  /* ------------------ CREATE COMPLAINT ------------------ */
   const complaint = await ComplaintService.createComplaint(
     { category, description, attachments, location },
     req.user
   );
 
-  // MUNICIPAL AUTO-DETECTION 
+  /* =====================================================
+     MUNICIPAL AUTO-DETECTION (INDIA-WIDE)
+     ===================================================== */
+
+  /* -------- MUNICIPAL MATCH -------- */
   const municipal = await Municipal.findOne({
-    boundary: {
-      $geoIntersects: {
-        $geometry: {
-          type: "Point",
-          coordinates: [
-            location.coordinates.lng,
-            location.coordinates.lat,
-          ],
-        },
-      },
-    },
+    "location.state": location.state.toLowerCase(),
+    "location.district": location.district.toLowerCase(),
+    isActive: true,
   });
 
   if (municipal) {
-    complaint.municipalId = municipal.code;
+    complaint.municipalId = municipal._id;
     await complaint.save();
   }
 
-  console.log("POINT:", location.coordinates.lng, location.coordinates.lat);
-console.log("FOUND MUNICIPAL:", municipal);
+  console.log("🏛️ MUNICIPAL:", municipal?.name || "NOT FOUND");
 
-
+  /* ------------------ RESPONSE ------------------ */
   return res.status(201).json(
     new ApiResponse({
       message: "Complaint created successfully",
@@ -190,7 +185,8 @@ export const getComplaintById = asyncHandler(async (req, res) => {
   const complaint = await Complaint.findById(id)
   .populate("feedback")
   .populate("assignedTo", "name email role")
-  .populate("verifiedBy", "name email role");
+  .populate("verifiedBy", "name email role")
+  .populate("municipalId", "name code location");
 
   if (!complaint) {
     throw new ApiError(404, "Complaint not found");
@@ -211,19 +207,9 @@ export const getComplaintById = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Access denied");
   }
 
-   // 🏛️ MUNICIPAL ENRICHMENT (ONLY ADDITION)
-  let municipal = null;
-  if (complaint.municipalId) {
-    municipal = await Municipal.findOne({
-      code: complaint.municipalId,
-    }).select("name code district state");
-  }
-
   return res.status(201).json(
     new ApiResponse({ message: "Complaint fetched successfully",
-      data : {complaint,
-        municipal,
-      }
+      data : {complaint},
     })
   );
 });

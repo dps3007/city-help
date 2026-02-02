@@ -156,7 +156,8 @@ const complaintSchema = new Schema(
     },
 
     municipalId: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: "Municipal",
       index: true,
     },
 

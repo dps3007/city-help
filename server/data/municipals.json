@@ -1,0 +1,175 @@
+[
+  { "name":"Greater Visakhapatnam Nagar Nigam","code":"GVMC","city":"Visakhapatnam","district":"Visakhapatnam","state":"Andhra Pradesh" },
+  { "name":"Vijayawada Nagar Nigam","code":"VMC","city":"Vijayawada","district":"Krishna","state":"Andhra Pradesh" },
+  { "name":"Guntur Nagar Nigam","code":"GMC","city":"Guntur","district":"Guntur","state":"Andhra Pradesh" },
+  { "name":"Nellore Nagar Nigam","code":"NMC","city":"Nellore","district":"Nellore","state":"Andhra Pradesh" },
+  { "name":"Kurnool Nagar Nigam","code":"KMC","city":"Kurnool","district":"Kurnool","state":"Andhra Pradesh" },
+  { "name":"Rajahmundry Nagar Nigam","code":"RMC","city":"Rajahmundry","district":"East Godavari","state":"Andhra Pradesh" },
+  { "name":"Tirupati Nagar Nigam","code":"TMC","city":"Tirupati","district":"Tirupati","state":"Andhra Pradesh" },
+  { "name":"Kadapa Nagar Nigam","code":"KDC","city":"Kadapa","district":"Kadapa","state":"Andhra Pradesh" },
+
+  { "name":"Guwahati Nagar Nigam","code":"GMC","city":"Guwahati","district":"Kamrup Metropolitan","state":"Assam" },
+  { "name":"Silchar Nagar Nigam","code":"SMC","city":"Silchar","district":"Cachar","state":"Assam" },
+
+  { "name":"Patna Nagar Nigam","code":"PMC","city":"Patna","district":"Patna","state":"Bihar" },
+  { "name":"Gaya Nagar Nigam","code":"GMC","city":"Gaya","district":"Gaya","state":"Bihar" },
+  { "name":"Bhagalpur Nagar Nigam","code":"BMC","city":"Bhagalpur","district":"Bhagalpur","state":"Bihar" },
+  { "name":"Muzaffarpur Nagar Nigam","code":"MMC","city":"Muzaffarpur","district":"Muzaffarpur","state":"Bihar" },
+  { "name":"Darbhanga Nagar Nigam","code":"DMC","city":"Darbhanga","district":"Darbhanga","state":"Bihar" },
+
+  { "name":"Raipur Nagar Nigam","code":"RMC","city":"Raipur","district":"Raipur","state":"Chhattisgarh" },
+  { "name":"Bhilai Nagar Nigam","code":"BMC","city":"Bhilai","district":"Durg","state":"Chhattisgarh" },
+  { "name":"Bilaspur Nagar Nigam","code":"BMC","city":"Bilaspur","district":"Bilaspur","state":"Chhattisgarh" },
+  { "name":"Korba Nagar Nigam","code":"KMC","city":"Korba","district":"Korba","state":"Chhattisgarh" },
+  { "name":"Durg Nagar Nigam","code":"DMC","city":"Durg","district":"Durg","state":"Chhattisgarh" },
+
+  { "name":"Delhi Nagar Nigam","code":"MCD","city":"Delhi","district":"Delhi","state":"Delhi" },
+  { "name":"New Delhi Nagar Palika","code":"NDMC","city":"New Delhi","district":"New Delhi","state":"Delhi" },
+
+  { "name":"Ahmedabad Nagar Nigam","code":"AMC","city":"Ahmedabad","district":"Ahmedabad","state":"Gujarat" },
+  { "name":"Surat Nagar Nigam","code":"SMC","city":"Surat","district":"Surat","state":"Gujarat" },
+  { "name":"Vadodara Nagar Nigam","code":"VMC","city":"Vadodara","district":"Vadodara","state":"Gujarat" },
+  { "name":"Rajkot Nagar Nigam","code":"RMC","city":"Rajkot","district":"Rajkot","state":"Gujarat" },
+  { "name":"Bhavnagar Nagar Nigam","code":"BMC","city":"Bhavnagar","district":"Bhavnagar","state":"Gujarat" },
+  { "name":"Jamnagar Nagar Nigam","code":"JMC","city":"Jamnagar","district":"Jamnagar","state":"Gujarat" },
+
+  { "name":"Faridabad Nagar Nigam","code":"FMC","city":"Faridabad","district":"Faridabad","state":"Haryana" },
+  { "name":"Gurugram Nagar Nigam","code":"MCG","city":"Gurugram","district":"Gurugram","state":"Haryana" },
+  { "name":"Panipat Nagar Nigam","code":"PMC","city":"Panipat","district":"Panipat","state":"Haryana" },
+  { "name":"Ambala Nagar Nigam","code":"AMC","city":"Ambala","district":"Ambala","state":"Haryana" },
+  { "name":"Yamunanagar Nagar Nigam","code":"YMC","city":"Yamunanagar","district":"Yamunanagar","state":"Haryana" },
+
+  { "name":"Amravati Nagar Nigam","code":"ANN","city":"Amravati","district":"Amravati","state":"Maharashtra" },
+  { "name":"Akola Nagar Nigam","code":"AKNN","city":"Akola","district":"Akola","state":"Maharashtra" },
+  { "name":"Chandrapur Nagar Nigam","code":"CNN","city":"Chandrapur","district":"Chandrapur","state":"Maharashtra" },
+  { "name":"Parbhani Nagar Nigam","code":"PNN","city":"Parbhani","district":"Parbhani","state":"Maharashtra" },
+  { "name":"Latur Nagar Nigam","code":"LNN","city":"Latur","district":"Latur","state":"Maharashtra" },
+  { "name":"Malegaon Nagar Nigam","code":"MNN","city":"Malegaon","district":"Nashik","state":"Maharashtra" },
+  { "name":"Nanded–Waghala Nagar Nigam","code":"NWNN","city":"Nanded","district":"Nanded","state":"Maharashtra" },
+  { "name":"Panvel Nagar Nigam","code":"PNN","city":"Panvel","district":"Raigad","state":"Maharashtra" },
+
+  { "name":"Tirunelveli Maanagaratchi","code":"TMC","city":"Tirunelveli","district":"Tirunelveli","state":"Tamil Nadu" },
+  { "name":"Thoothukudi Maanagaratchi","code":"TMC","city":"Thoothukudi","district":"Thoothukudi","state":"Tamil Nadu" },
+  { "name":"Vellore Maanagaratchi","code":"VMC","city":"Vellore","district":"Vellore","state":"Tamil Nadu" },
+  { "name":"Dindigul Maanagaratchi","code":"DMC","city":"Dindigul","district":"Dindigul","state":"Tamil Nadu" },
+  { "name":"Erode Maanagaratchi","code":"EMC","city":"Erode","district":"Erode","state":"Tamil Nadu" },
+
+  { "name":"Tirupati Nagar Nigam","code":"TNN","city":"Tirupati","district":"Tirupati","state":"Andhra Pradesh" },
+  { "name":"Eluru Nagar Nigam","code":"ENN","city":"Eluru","district":"Eluru","state":"Andhra Pradesh" },
+  { "name":"Machilipatnam Nagar Nigam","code":"MNN","city":"Machilipatnam","district":"Krishna","state":"Andhra Pradesh" },
+  { "name":"Ongole Nagar Nigam","code":"ONN","city":"Ongole","district":"Prakasam","state":"Andhra Pradesh" },
+
+  { "name":"Panaji Nagar Nigam","code":"PNN","city":"Panaji","district":"North Goa","state":"Goa" },
+
+  { "name":"Srinagar Nagar Nigam","code":"SNN","city":"Srinagar","district":"Srinagar","state":"Jammu and Kashmir" },
+  { "name":"Jammu Nagar Nigam","code":"JNN","city":"Jammu","district":"Jammu","state":"Jammu and Kashmir" },
+
+  { "name":"Daman Nagar Palika","code":"DNP","city":"Daman","district":"Daman","state":"Dadra and Nagar Haveli and Daman and Diu" },
+
+  { "name":"Shimla Nagar Nigam","code":"SMC","city":"Shimla","district":"Shimla","state":"Himachal Pradesh" },
+  { "name":"Dharamshala Nagar Nigam","code":"DMC","city":"Dharamshala","district":"Kangra","state":"Himachal Pradesh" },
+
+  { "name":"Ranchi Nagar Nigam","code":"RMC","city":"Ranchi","district":"Ranchi","state":"Jharkhand" },
+  { "name":"Dhanbad Nagar Nigam","code":"DMC","city":"Dhanbad","district":"Dhanbad","state":"Jharkhand" },
+  { "name":"Jamshedpur Nagar Nigam","code":"JMC","city":"Jamshedpur","district":"East Singhbhum","state":"Jharkhand" },
+
+  { "name":"Bruhat Bengaluru Mahanagara Palike","code":"BBMP","city":"Bengaluru","district":"Bengaluru Urban","state":"Karnataka" },
+  { "name":"Mysuru Mahanagara Palike","code":"MCC","city":"Mysuru","district":"Mysuru","state":"Karnataka" },
+  { "name":"Mangaluru Mahanagara Palike","code":"MCC","city":"Mangaluru","district":"Dakshina Kannada","state":"Karnataka" },
+  { "name":"Hubballi–Dharwad Mahanagara Palike","code":"HDMC","city":"Hubballi-Dharwad","district":"Dharwad","state":"Karnataka" },
+  { "name":"Belagavi Mahanagara Palike","code":"BCC","city":"Belagavi","district":"Belagavi","state":"Karnataka" },
+  { "name":"Kalaburagi Mahanagara Palike","code":"KCC","city":"Kalaburagi","district":"Kalaburagi","state":"Karnataka" },
+  { "name":"Davanagere Mahanagara Palike","code":"DCC","city":"Davanagere","district":"Davanagere","state":"Karnataka" },
+  { "name":"Shivamogga Mahanagara Palike","code":"SCC","city":"Shivamogga","district":"Shivamogga","state":"Karnataka" },
+
+  { "name":"Thiruvananthapuram Nagar Nigam","code":"TMC","city":"Thiruvananthapuram","district":"Thiruvananthapuram","state":"Kerala" },
+  { "name":"Kochi Nagar Nigam","code":"KMC","city":"Kochi","district":"Ernakulam","state":"Kerala" },
+  { "name":"Kozhikode Nagar Nigam","code":"KMC","city":"Kozhikode","district":"Kozhikode","state":"Kerala" },
+  { "name":"Thrissur Nagar Nigam","code":"TMC","city":"Thrissur","district":"Thrissur","state":"Kerala" },
+  { "name":"Kollam Nagar Nigam","code":"KMC","city":"Kollam","district":"Kollam","state":"Kerala" },
+
+  { "name":"Bhopal Nagar Nigam","code":"BMC","city":"Bhopal","district":"Bhopal","state":"Madhya Pradesh" },
+  { "name":"Indore Nagar Nigam","code":"IMC","city":"Indore","district":"Indore","state":"Madhya Pradesh" },
+  { "name":"Jabalpur Nagar Nigam","code":"JMC","city":"Jabalpur","district":"Jabalpur","state":"Madhya Pradesh" },
+  { "name":"Gwalior Nagar Nigam","code":"GMC","city":"Gwalior","district":"Gwalior","state":"Madhya Pradesh" },
+  { "name":"Ujjain Nagar Nigam","code":"UMC","city":"Ujjain","district":"Ujjain","state":"Madhya Pradesh" },
+  { "name":"Sagar Nagar Nigam","code":"SMC","city":"Sagar","district":"Sagar","state":"Madhya Pradesh" },
+
+  { "name":"Brihanmumbai Mahanagar Palika","code":"BMC","city":"Mumbai","district":"Mumbai City","state":"Maharashtra" },
+  { "name":"Pune Nagar Nigam","code":"PMC","city":"Pune","district":"Pune","state":"Maharashtra" },
+  { "name":"Nagpur Nagar Nigam","code":"NMC","city":"Nagpur","district":"Nagpur","state":"Maharashtra" },
+  { "name":"Thane Nagar Nigam","code":"TMC","city":"Thane","district":"Thane","state":"Maharashtra" },
+  { "name":"Navi Mumbai Nagar Nigam","code":"NMMC","city":"Navi Mumbai","district":"Thane","state":"Maharashtra" },
+  { "name":"Kalyan-Dombivli Nagar Nigam","code":"KDMC","city":"Kalyan-Dombivli","district":"Thane","state":"Maharashtra" },
+  { "name":"Aurangabad Nagar Nigam","code":"AMC","city":"Aurangabad","district":"Aurangabad","state":"Maharashtra" },
+  { "name":"Solapur Nagar Nigam","code":"SMC","city":"Solapur","district":"Solapur","state":"Maharashtra" },
+  { "name":"Imphal Nagar Nigam","code":"INN","city":"Imphal","district":"Imphal West","state":"Manipur" },
+
+  { "name":"Shillong Municipal Board","code":"SMB","city":"Shillong","district":"East Khasi Hills","state":"Meghalaya" },
+
+  { "name":"Aizawl Municipal Corporation","code":"AMC","city":"Aizawl","district":"Aizawl","state":"Mizoram" },
+
+  { "name":"Dimapur Nagar Parishad","code":"DNP","city":"Dimapur","district":"Dimapur","state":"Nagaland" },
+
+  { "name":"Bhubaneswar Nagar Nigam","code":"BMC","city":"Bhubaneswar","district":"Khordha","state":"Odisha" },
+  { "name":"Cuttack Nagar Nigam","code":"CMC","city":"Cuttack","district":"Cuttack","state":"Odisha" },
+  { "name":"Berhampur Nagar Nigam","code":"BeMC","city":"Berhampur","district":"Ganjam","state":"Odisha" },
+  { "name":"Sambalpur Nagar Nigam","code":"SMC","city":"Sambalpur","district":"Sambalpur","state":"Odisha" },
+  { "name":"Rourkela Nagar Nigam","code":"RMC","city":"Rourkela","district":"Sundargarh","state":"Odisha" },
+
+  { "name":"Ludhiana Nagar Nigam","code":"LNN","city":"Ludhiana","district":"Ludhiana","state":"Punjab" },
+  { "name":"Amritsar Nagar Nigam","code":"ANN","city":"Amritsar","district":"Amritsar","state":"Punjab" },
+  { "name":"Jalandhar Nagar Nigam","code":"JNN","city":"Jalandhar","district":"Jalandhar","state":"Punjab" },
+  { "name":"Patiala Nagar Nigam","code":"PNN","city":"Patiala","district":"Patiala","state":"Punjab" },
+
+  { "name":"Jaipur Nagar Nigam Greater","code":"JNNG","city":"Jaipur","district":"Jaipur","state":"Rajasthan" },
+  { "name":"Jaipur Nagar Nigam Heritage","code":"JNNH","city":"Jaipur","district":"Jaipur","state":"Rajasthan" },
+  { "name":"Jodhpur Nagar Nigam North","code":"JNNN","city":"Jodhpur","district":"Jodhpur","state":"Rajasthan" },
+  { "name":"Jodhpur Nagar Nigam South","code":"JNNS","city":"Jodhpur","district":"Jodhpur","state":"Rajasthan" },
+  { "name":"Udaipur Nagar Nigam","code":"UNN","city":"Udaipur","district":"Udaipur","state":"Rajasthan" },
+  { "name":"Kota Nagar Nigam","code":"KNN","city":"Kota","district":"Kota","state":"Rajasthan" },
+  { "name":"Ajmer Nagar Nigam","code":"ANN","city":"Ajmer","district":"Ajmer","state":"Rajasthan" },
+
+  { "name":"Gangtok Municipal Corporation","code":"GMC","city":"Gangtok","district":"Gangtok","state":"Sikkim" },
+
+  { "name":"Chennai Perunagara Maanagaratchi","code":"GCC","city":"Chennai","district":"Chennai","state":"Tamil Nadu" },
+  { "name":"Coimbatore Maanagaratchi","code":"CMC","city":"Coimbatore","district":"Coimbatore","state":"Tamil Nadu" },
+  { "name":"Madurai Maanagaratchi","code":"MMC","city":"Madurai","district":"Madurai","state":"Tamil Nadu" },
+  { "name":"Tiruchirappalli Maanagaratchi","code":"TMC","city":"Tiruchirappalli","district":"Tiruchirappalli","state":"Tamil Nadu" },
+  { "name":"Salem Maanagaratchi","code":"SMC","city":"Salem","district":"Salem","state":"Tamil Nadu" },
+
+  { "name":"Greater Hyderabad Mahanagara Palika","code":"GHMC","city":"Hyderabad","district":"Hyderabad","state":"Telangana" },
+  { "name":"Greater Warangal Municipal Corporation","code":"GWMC","city":"Warangal","district":"Hanamkonda","state":"Telangana" },
+  { "name":"Karimnagar Municipal Corporation","code":"KMC","city":"Karimnagar","district":"Karimnagar","state":"Telangana" },
+  { "name":"Nizamabad Municipal Corporation","code":"NMC","city":"Nizamabad","district":"Nizamabad","state":"Telangana" },
+  { "name":"Khammam Municipal Corporation","code":"KMC","city":"Khammam","district":"Khammam","state":"Telangana" },
+  { "name":"Ramagundam Municipal Corporation","code":"RMC","city":"Ramagundam","district":"Peddapalli","state":"Telangana" },
+
+  { "name":"Agartala Nagar Nigam","code":"ANN","city":"Agartala","district":"West Tripura","state":"Tripura" },
+
+  { "name":"Dehradun Nagar Nigam","code":"DNN","city":"Dehradun","district":"Dehradun","state":"Uttarakhand" },
+  { "name":"Haridwar Nagar Nigam","code":"HNN","city":"Haridwar","district":"Haridwar","state":"Uttarakhand" },
+
+  { "name":"Lucknow Nagar Nigam","code":"LNN","city":"Lucknow","district":"Lucknow","state":"Uttar Pradesh" },
+  { "name":"Kanpur Nagar Nigam","code":"KNN","city":"Kanpur","district":"Kanpur Nagar","state":"Uttar Pradesh" },
+  { "name":"Ghaziabad Nagar Nigam","code":"GNN","city":"Ghaziabad","district":"Ghaziabad","state":"Uttar Pradesh" },
+  { "name":"Agra Nagar Nigam","code":"ANN","city":"Agra","district":"Agra","state":"Uttar Pradesh" },
+  { "name":"Varanasi Nagar Nigam","code":"VNN","city":"Varanasi","district":"Varanasi","state":"Uttar Pradesh" },
+  { "name":"Meerut Nagar Nigam","code":"MNN","city":"Meerut","district":"Meerut","state":"Uttar Pradesh" },
+  { "name":"Prayagraj Nagar Nigam","code":"PNN","city":"Prayagraj","district":"Prayagraj","state":"Uttar Pradesh" },
+  { "name":"Bareilly Nagar Nigam","code":"BNN","city":"Bareilly","district":"Bareilly","state":"Uttar Pradesh" },
+  { "name":"Aligarh Nagar Nigam","code":"ANN","city":"Aligarh","district":"Aligarh","state":"Uttar Pradesh" },
+  { "name":"Moradabad Nagar Nigam","code":"MNN","city":"Moradabad","district":"Moradabad","state":"Uttar Pradesh" },
+  { "name":"Saharanpur Nagar Nigam","code":"SNN","city":"Saharanpur","district":"Saharanpur","state":"Uttar Pradesh" },
+  { "name":"Gorakhpur Nagar Nigam","code":"GNN","city":"Gorakhpur","district":"Gorakhpur","state":"Uttar Pradesh" },
+  { "name":"Jhansi Nagar Nigam","code":"JNN","city":"Jhansi","district":"Jhansi","state":"Uttar Pradesh" },
+  { "name":"Mathura–Vrindavan Nagar Nigam","code":"MVNN","city":"Mathura","district":"Mathura","state":"Uttar Pradesh" },
+
+  { "name":"Kolkata Nagar Nigam","code":"KMC","city":"Kolkata","district":"Kolkata","state":"West Bengal" },
+  { "name":"Howrah Nagar Nigam","code":"HMC","city":"Howrah","district":"Howrah","state":"West Bengal" },
+  { "name":"Chandannagar Nagar Nigam","code":"CMC","city":"Chandannagar","district":"Hooghly","state":"West Bengal" },
+  { "name":"Asansol Nagar Nigam","code":"AMC","city":"Asansol","district":"Paschim Bardhaman","state":"West Bengal" },
+  { "name":"Siliguri Nagar Nigam","code":"SMC","city":"Siliguri","district":"Darjeeling","state":"West Bengal" }
+]
+
+
