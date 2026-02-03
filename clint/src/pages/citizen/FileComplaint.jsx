@@ -37,6 +37,18 @@ function FileComplaint() {
     }));
   };
 
+  const parseCoordinates = (value) => {
+  const parts = value.split(",").map(p => p.trim());
+  if (parts.length !== 2) return null;
+
+  const lat = Number(parts[0]);
+  const lng = Number(parts[1]);
+
+  if (isNaN(lat) || isNaN(lng)) return null;
+  return { lat, lng };
+};
+
+
   const detectLocation = () => {
     if (!navigator.geolocation) {
       alert("Geolocation not supported");
@@ -54,19 +66,19 @@ function FileComplaint() {
 
         const data = res.data;
 
-        setForm((prev) => ({
+        setForm(prev => ({
           ...prev,
-          city: data.city,
-          district: data.district,
-          state: data.state,
-          pincode: data.pincode || prev.pincode,
+          city: data.city || "",
+          district: data.district || "",
+          state: data.state || "",
+          pincode: data.pincode || "",
           localAddress:
             prev.localAddress ||
             data.suburb ||
             data.neighbourhood ||
             "",
           coordinates: { lat, lng },
-          location: `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
+          location: `${lat.toFixed(6)}, ${lng.toFixed(6)}`
         }));
       },
       () => alert("Location permission denied")
@@ -75,6 +87,11 @@ function FileComplaint() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.coordinates) {
+    setError("Valid coordinates are required (lat, lng)");
+    return;
+  }
+
 
     if (!form.city || !form.district || !form.state) {
       alert("City, District and State are required");
@@ -97,12 +114,12 @@ function FileComplaint() {
     if (form.coordinates) {
       const locationObj = {
         address: form.location,
-        city: form.city || "Unknown",
-        district: form.district || "Unknown",
-        state: form.state || "Unknown",
-        localAddress: form.localAddress || "Unknown",
+        city: form.city,
+        district: form.district,
+        state: form.state,
+        localAddress: form.localAddress,
         pincode: form.pincode,
-        coordinates: form.coordinates,
+        coordinates: form.coordinates
       };
       formData.append("location", JSON.stringify(locationObj));
     }
@@ -203,16 +220,23 @@ function FileComplaint() {
 
           <div className="mt-2 space-y-3">
             <div className="flex gap-2">
-<input
-        type="text"
-        name="location"
-        value={form.location}
-        onChange={(e) =>
-          setForm({ ...form, location: e.target.value })
-        }
-        className="flex-1 rounded-lg border px-3 py-2 text-sm"
-        placeholder="Enter coordinates (lat, lng)"
-      />
+              <input
+                type="text"
+                name="location"
+                value={form.location}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const coords = parseCoordinates(value);
+
+                  setForm(prev => ({
+                    ...prev,
+                    location: value,
+                    coordinates: coords // null if invalid
+                  }));
+                }}
+                className="flex-1 rounded-lg border px-3 py-2 text-sm"
+                placeholder="Enter coordinates (lat, lng)"
+              />
               <button
                 type="button"
                 onClick={detectLocation}
