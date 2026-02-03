@@ -1,35 +1,32 @@
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { Schema } from "mongoose";
 
 // Enums
 const STATUS_ENUM = [
-  'SUBMITTED',
-  'VERIFIED',
-  'ASSIGNED',
-  'IN_PROGRESS',
-  'RESOLVED',
-  'CLOSED',
-  'REJECTED',
+  "SUBMITTED",
+  "VERIFIED",
+  "ASSIGNED",
+  "IN_PROGRESS",
+  "RESOLVED",
+  "CLOSED",
+  "REJECTED",
 ];
 
-// Category options
 const CATEGORY_ENUM = [
-  'GARBAGE',
-  'ROADS',
-  'WATER',
-  'STREETLIGHT',
-  'ELECTRICITY',
-  'OTHER',
+  "GARBAGE",
+  "ROADS",
+  "WATER",
+  "STREETLIGHT",
+  "ELECTRICITY",
+  "OTHER",
 ];
 
-// Attachment types
-const ATTACHMENT_TYPE = ['IMAGE', 'VIDEO', 'PDF'];
+const ATTACHMENT_TYPE = ["IMAGE", "VIDEO", "PDF"];
 
-// Complaint Schema
 const complaintSchema = new Schema(
   {
     citizen: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
       index: true,
     },
@@ -55,6 +52,7 @@ const complaintSchema = new Schema(
       },
     ],
 
+    /* ================= LOCATION (SINGLE SOURCE OF TRUTH) ================= */
     location: {
       localAddress: {
         type: String,
@@ -83,46 +81,42 @@ const complaintSchema = new Schema(
         type: String,
       },
 
-      coordinates: {
-        lat: {
-          type: Number,
+      geo: {
+        type: {
+          type: String,
+          enum: ["Point"],
+          default: "Point",
         },
-
-        lng: {
-          type: Number,
+        coordinates: {
+          type: [Number], // [lng, lat]
+          required: true,
         },
-        
       },
+
       autoDetected: {
         type: Boolean,
         default: false,
       },
     },
 
-
+    /* ================= STATUS / FLOW ================= */
     status: {
       type: String,
       enum: STATUS_ENUM,
-      default: 'SUBMITTED',
+      default: "SUBMITTED",
       index: true,
     },
 
     assignedTo: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       default: null,
       index: true,
     },
 
     verifiedBy: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
-      default: null,
-    },
-
-    feedback: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Feedback",
+      ref: "User",
       default: null,
     },
 
@@ -131,16 +125,25 @@ const complaintSchema = new Schema(
       default: null,
     },
 
-    complaintId: {
-      type: String,
-      unique: true,
-      index: true,
+    feedback: {
+      type: Schema.Types.ObjectId,
+      ref: "Feedback",
+      default: null,
     },
 
+    /* ================= CROWD + PRIORITY ================= */
     upvotes: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'User',
+        ref: "User",
+      },
+    ],
+
+    supporters: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        index: true,
       },
     ],
 
@@ -155,6 +158,7 @@ const complaintSchema = new Schema(
       default: "NORMAL",
     },
 
+    /* ================= MUNICIPAL / AI ================= */
     municipalId: {
       type: Schema.Types.ObjectId,
       ref: "Municipal",
@@ -168,12 +172,13 @@ const complaintSchema = new Schema(
       max: 1,
     },
 
+    /* ================= TIMELINE ================= */
     timeline: [
       {
         status: { type: String },
         updatedBy: {
           type: Schema.Types.ObjectId,
-          ref: 'User',
+          ref: "User",
         },
         at: {
           type: Date,
@@ -181,13 +186,22 @@ const complaintSchema = new Schema(
         },
       },
     ],
+
+    complaintId: {
+      type: String,
+      unique: true,
+      index: true,
+    },
   },
   { timestamps: true }
 );
 
-// Pre-save hook to generate complaintId and maintain upvoteCount
+/* ================= INDEXES ================= */
+complaintSchema.index({ "location.geo": "2dsphere" });
+complaintSchema.index({ supporters: 1 });
+
+/* ================= PRE-SAVE HOOK ================= */
 complaintSchema.pre("save", function (next) {
-  /* Generate readable complaint ID */
   if (!this.complaintId) {
     const city = (this.location?.city || "GEN")
       .slice(0, 3)
@@ -198,10 +212,8 @@ complaintSchema.pre("save", function (next) {
     )}`;
   }
 
-  /* 🔥 ALWAYS SYNC UPVOTES */
   this.upvoteCount = this.upvotes.length;
 
-  /* 🔥 AUTO PRIORITY */
   if (this.upvoteCount >= 5) this.priority = "HIGH";
   else if (this.upvoteCount >= 3) this.priority = "MEDIUM";
   else this.priority = "NORMAL";
@@ -209,4 +221,4 @@ complaintSchema.pre("save", function (next) {
   next();
 });
 
-export default mongoose.model('Complaint', complaintSchema);
+export default mongoose.model("Complaint", complaintSchema);

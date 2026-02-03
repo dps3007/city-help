@@ -71,10 +71,24 @@ function ComplaintDetail() {
     complaint.status === "RESOLVED" ||
     complaint.status === "CLOSED";
 
+  const isOwnerOrSupporter =
+    complaint.citizen === user?._id ||
+    complaint.supporters?.some(
+      (id) => id === user?._id
+    );
+
   const canGiveFeedback =
     user?.role === "CITIZEN" &&
+    isOwnerOrSupporter &&
     resolvedOrClosed &&
     !complaint.feedback;
+
+  const hasGeo =
+    complaint.location?.geo?.coordinates?.length === 2;
+
+  const [lng, lat] = hasGeo
+    ? complaint.location.geo.coordinates
+    : [];
 
   /* ================= UI ================= */
 
@@ -148,7 +162,7 @@ function ComplaintDetail() {
         <div className="bg-white rounded-xl shadow p-6">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-lg font-semibold">Location</h2>
-            {complaint.location?.coordinates && (
+            {hasGeo && (
               <Button
                 onClick={() => {
                   setFocusMap(false);
@@ -158,7 +172,7 @@ function ComplaintDetail() {
               >
                 📍 Go to Location
               </Button>
-            )}
+            )}            
           </div>
 
           <p className="text-gray-700 mb-4">
@@ -168,11 +182,11 @@ function ComplaintDetail() {
             {complaint.location.city}, {complaint.location.state}
           </p>
 
-          {complaint.location?.coordinates && (
+          {hasGeo && (
             <div className="rounded-lg overflow-hidden border">
               <ComplaintMap
-                lat={complaint.location.coordinates.lat}
-                lng={complaint.location.coordinates.lng}
+                lat={lat}
+                lng={lng}
                 focus={focusMap}
               />
             </div>
@@ -267,7 +281,7 @@ function ComplaintDetail() {
             </Button>
           ) : (
             <p className="text-sm text-gray-500">
-              Only the citizen who raised this complaint can submit feedback.
+              Only affected citizens can submit feedback.
             </p>
           )}
         </div>

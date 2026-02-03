@@ -5,9 +5,9 @@ export const getAllComplaints = async () => {
   return res.data.data;
 };
 
-export const createComplaint = async (body) => {
-  const res = await api.post("/complaints", body);
-  return res.data.data;
+export const createComplaint = async (formData) => {
+  const res = await api.post("/complaints", formData);
+  return res.data;
 };
 
 export const verifyComplaint = async (id) => {

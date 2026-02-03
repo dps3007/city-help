@@ -43,16 +43,22 @@ router.post(
 
 /* ================== LIST ================== */
 router.get("/", verifyJWT, getComplaints);
+
 router.get("/admin/all", verifyJWT, checkRole("OFFICER"), getAllComplaints);
 
 /* ================== ACTIONS ================== */
 router.patch("/:id/assign", verifyJWT, checkRole("DEPT_HEAD"), assignComplaint);
+
 router.patch("/:id/verify", verifyJWT, checkRole("DEPT_HEAD"), verifyComplaint);
+
 router.patch("/:id/start-work", verifyJWT, checkRole("OFFICER"), startWork);
+
 router.patch("/:id/resolve", verifyJWT, checkRole("OFFICER"), resolveComplaint);
+
 router.patch("/:id/close", verifyJWT, checkRole("DEPT_HEAD"), closeComplaint);
 
 router.post("/:id/upvote", verifyJWT, checkRole("CITIZEN"), upvoteComplaint);
+
 router.post("/:id/feedback", verifyJWT, checkRole("CITIZEN"), submitFeedback);
 
 /* ================== GET BY ID (LAST!) ================== */

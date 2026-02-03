@@ -6,7 +6,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { getSocket } from "../../socket";
 
-const socket = getSocket();
+let socket;
 
 function DistrictFeed() {
   const { user } = useAuth();
@@ -29,6 +29,7 @@ function DistrictFeed() {
   }, []);
 
   useEffect(() => {
+    socket = getSocket();
     const onUpvote = ({ complaintId, upvoteCount, priority }) => {
       setFeed((prev) =>
         prev.map((c) =>

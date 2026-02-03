@@ -113,22 +113,31 @@ function FileComplaint() {
 
     if (form.coordinates) {
       const locationObj = {
-        address: form.location,
         city: form.city,
         district: form.district,
         state: form.state,
         localAddress: form.localAddress,
         pincode: form.pincode,
-        coordinates: form.coordinates
+        coordinates: {
+          lat: form.coordinates.lat,
+          lng: form.coordinates.lng,
+        },
       };
       formData.append("location", JSON.stringify(locationObj));
     }
 
     try {
       setLoading(true);
-      await createComplaint(formData);
-      setSuccess("Complaint submitted successfully");
+      const res = await createComplaint(formData);
 
+    if (res.data.duplicate) {
+      setSuccess("⚠️ Complaint already exists. You have been linked to it.");
+      return;
+
+    } else {
+      setSuccess("✅ Complaint submitted successfully");
+
+    }
       setForm({
         category: "",
         description: "",

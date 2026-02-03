@@ -91,7 +91,7 @@ export const createComplaint = asyncHandler(async (req, res) => {
   }
 
   /* ------------------ PARSE LOCATION ------------------ */
-  let location = null;
+  let location;
   try {
     location =
       typeof locationStr === "string"
@@ -101,15 +101,58 @@ export const createComplaint = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid location format");
   }
 
-  if (
-    !location?.coordinates?.lat ||
-    !location?.coordinates?.lng
-  ) {
-    throw new ApiError(400, "Location coordinates required");
+  const lat = location?.coordinates?.lat;
+  const lng = location?.coordinates?.lng;
+
+  if (typeof lat !== "number" || typeof lng !== "number") {
+    throw new ApiError(400, "Valid location coordinates required");
+  }
+
+  /* ------------------ DUPLICATE DETECTION ------------------ */
+  const ACTIVE_STATUSES = [
+    "SUBMITTED",
+    "VERIFIED",
+    "ASSIGNED",
+    "IN_PROGRESS",
+  ];
+
+  const existingComplaint = await Complaint.findOne({
+    category,
+    status: { $in: ACTIVE_STATUSES },
+    "location.geo": {
+      $near: {
+        $geometry: {
+          type: "Point",
+          coordinates: [lng, lat], // [lng, lat]
+        },
+        $maxDistance: 100, // meters
+      },
+    },
+  });
+
+  /* ------------------ IF DUPLICATE → LINK USER ------------------ */
+  if (existingComplaint) {
+    
+    existingComplaint.supporters.addToSet(req.user._id);
+    existingComplaint.upvotes.addToSet(req.user._id);
+
+    await existingComplaint.save();
+
+    return res.status(409).json(
+      new ApiResponse({
+        message:
+          "Complaint already exists. You are now linked to this complaint.",
+        data: {
+          complaint: existingComplaint,
+          duplicate: true,
+        },
+      })
+    );
   }
 
   /* ------------------ IMAGE UPLOAD ------------------ */
   const upload = await uploadToCloudinary(file.buffer);
+
   const attachments = [
     {
       url: upload.secure_url,
@@ -118,16 +161,27 @@ export const createComplaint = asyncHandler(async (req, res) => {
   ];
 
   /* ------------------ CREATE COMPLAINT ------------------ */
-  const complaint = await ComplaintService.createComplaint(
-    { category, description, attachments, location },
-    req.user
-  );
+  const complaint = await Complaint.create({
+    citizen: req.user._id,
+    category,
+    description,
+    attachments,
+    location: {
+      localAddress: location.localAddress || "",
+      city: location.city,
+      district: location.district,
+      state: location.state,
+      pincode: location.pincode,
+      autoDetected: location.autoDetected || false,
+      geo: {
+        type: "Point",
+        coordinates: [lng, lat],
+      },
+    },
+    supporters: [],
+  });
 
-  /* =====================================================
-     MUNICIPAL AUTO-DETECTION (INDIA-WIDE)
-     ===================================================== */
-
-  /* -------- MUNICIPAL MATCH -------- */
+  /* ------------------ MUNICIPAL AUTO-DETECTION ------------------ */
   const municipal = await Municipal.findOne({
     "location.state": location.state.toLowerCase(),
     "location.district": location.district.toLowerCase(),
@@ -139,13 +193,14 @@ export const createComplaint = asyncHandler(async (req, res) => {
     await complaint.save();
   }
 
-  console.log("🏛️ MUNICIPAL:", municipal?.name || "NOT FOUND");
-
   /* ------------------ RESPONSE ------------------ */
   return res.status(201).json(
     new ApiResponse({
       message: "Complaint created successfully",
-      data: { complaint },
+      data: {
+        complaint,
+        duplicate: false,
+      },
     })
   );
 });
@@ -155,17 +210,30 @@ export const getComplaints = asyncHandler(async (req, res) => {
   const user = req.user;
   let filter = {};
 
+  /* ================= CITIZEN ================= */
   if (user.role === "CITIZEN") {
-    filter.citizen = user._id;
+    filter = {
+      $or: [
+        { citizen: user._id },     // created by user
+        { supporters: user._id },  // duplicate-linked
+      ],
+    };
   }
 
+  /* ================= OFFICER ================= */
   if (user.role === "OFFICER") {
-    filter.assignedTo = user._id;
+    filter = {
+      assignedTo: user._id,
+    };
   }
+
+  /* ================= OTHERS (ADMIN ETC) ================= */
+  // admins see everything (no filter)
 
   const complaints = await Complaint.find(filter)
     .populate("verifiedBy", "name email role")
     .populate("assignedTo", "name email role")
+    .populate("municipalId", "name code location")
     .sort({ createdAt: -1 })
     .limit(50);
 
@@ -195,7 +263,8 @@ export const getComplaintById = asyncHandler(async (req, res) => {
   // Access control
   if (
     user.role === "CITIZEN" &&
-    !complaint.citizen.equals(user._id)
+    !complaint.citizen.equals(user._id) &&
+    !complaint.supporters.includes(user._id)
   ) {
     throw new ApiError(403, "Access denied");
   }
