@@ -8,91 +8,65 @@ import Reward from "../models/reward.model.js";
 
 // Create feedback for a complaint
 export const createFeedback = asyncHandler(async (req, res) => {
-  const { complaintId, rating, comment } = req.body;
-
-  if (!complaintId || !rating) {
-    throw new ApiError(400, "Complaint ID and rating are required");
-  }
-
-  // ✅ DEFENSIVE: only citizen
-  if (req.user.role !== "CITIZEN") {
-    throw new ApiError(403, "Only citizens can submit feedback");
-  }
+  const complaintId = req.params.id;
+  const { rating, comment } = req.body;
+  const userId = req.user._id;
 
   const complaint = await Complaint.findById(complaintId);
-  if (!complaint) {
-    throw new ApiError(404, "Complaint not found");
+  if (!complaint) throw new ApiError(404, "Complaint not found");
+
+  const isOwner = complaint.citizen.equals(userId);
+  const isSupporter = complaint.supporters.some(id => id.equals(userId));
+
+  if (!isOwner && !isSupporter) {
+    throw new ApiError(403, "Only owner or supporters can give feedback");
   }
 
-  if (complaint.citizen.toString() !== req.user._id.toString()) {
-    throw new ApiError(403, "Not authorized to give feedback for this complaint");
+  if (!["RESOLVED", "CLOSED"].includes(complaint.status)) {
+    throw new ApiError(400, "Complaint not resolved yet");
   }
 
-  if (complaint.status !== "CLOSED") {
-    throw new ApiError(
-      400,
-      "Feedback allowed only after complaint is closed"
-    );
-  }
-
-  const existing = await Feedback.findOne({ complaint: complaintId });
+  const existing = await Feedback.findOne({
+    complaint: complaintId,
+    user: userId,
+  });
   if (existing) {
     throw new ApiError(409, "Feedback already submitted");
   }
 
   const feedback = await Feedback.create({
     complaint: complaintId,
-    user: req.user._id,
+    user: userId,
     rating,
     comment,
   });
 
-  const rewardExists = await Reward.findOne({
-    userId: req.user._id,
-    complaintId,
-    reason: "FEEDBACK_GIVEN",
-  });
-
-  if (!rewardExists) {
-    await addRewardPoints({
-      userId: req.user._id,
-      points: 5,
-      reason: "FEEDBACK_GIVEN",
-      complaintId,
-    });
+  if (!Array.isArray(complaint.feedback)) {
+    complaint.feedback = [];
   }
+  complaint.feedback.push(feedback._id);
+  await complaint.save();
 
   return res.status(201).json(
+    new ApiResponse({ message: "Feedback submitted", data: { feedback } })
+  );
+});
+
+
+// Get all feedbacks for a complaint
+export const getComplaintFeedbacks = asyncHandler(async (req, res) => {
+  const { complaintId } = req.params;
+
+  const feedbacks = await Feedback.find({ complaint: complaintId })
+    .populate("user", "name email avatar")
+    .sort({ createdAt: -1 });
+
+  return res.status(200).json(
     new ApiResponse({
-      data: { feedback },
-      message: "Feedback submitted successfully",
+      data: { feedbacks },
+      message: "Feedbacks retrieved successfully",
     })
   );
 });
 
-// Get feedback by complaint ID
-export const getFeedbackByComplaint = asyncHandler(async (req, res) => {
-  const feedback = await Feedback.findOne({
-    complaint: req.params.complaintId
-  }).populate("user", "username");
-
-  if (!feedback) {
-    throw new ApiError(404, "Feedback not found");
-  }
-
-  return res.status(200).json(
-    new ApiResponse({ data: { feedback } , message: "Feedback fetched successfully" })
-  );
-});
-
-// Get all feedbacks (admin only)
-export const getAllFeedbacks = asyncHandler(async (req, res) => {
-  const feedbacks = await Feedback.find()
-    .populate("user", "username")
-    .populate("complaint", "category status");
-
-  return res.status(200).json(
-    new ApiResponse({ data: { feedbacks } , message:  "All feedback fetched successfully"})
-  );
-});
 

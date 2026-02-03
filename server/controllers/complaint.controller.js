@@ -1,7 +1,6 @@
 import { io } from "../server.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import Complaint from "../models/complaint.model.js";
-import * as ComplaintService from "../services/complaint.service.js";
 import { addRewardPoints } from "./reward.controller.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -10,8 +9,6 @@ import User from "../models/user.model.js";
 import { Feedback } from "../models/feedback.model.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 import Municipal from "../models/municipal.model.js";
-import { reverseGeocode } from "../utils/reverseGeocode.js";
-
 
 
 export const getAllComplaints = asyncHandler(async (req, res) => {
@@ -179,6 +176,7 @@ export const createComplaint = asyncHandler(async (req, res) => {
       },
     },
     supporters: [],
+    feedback: [],
   });
 
   /* ------------------ MUNICIPAL AUTO-DETECTION ------------------ */
@@ -251,24 +249,40 @@ export const getComplaintById = asyncHandler(async (req, res) => {
   const user = req.user;
 
   const complaint = await Complaint.findById(id)
-  .populate("feedback")
-  .populate("assignedTo", "name email role")
-  .populate("verifiedBy", "name email role")
-  .populate("municipalId", "name code location");
+    .populate("citizen", "name email avatar")
+    .populate("supporters", "name email avatar")
+    .populate({
+      path: "feedback", 
+      populate: {
+        path: "user",
+        select: "name email avatar"
+      }
+    })
+    .populate("assignedTo", "name email role")
+    .populate("verifiedBy", "name email role")
+    .populate("municipalId", "name code location");
 
   if (!complaint) {
     throw new ApiError(404, "Complaint not found");
   }
 
-  // Access control
-  if (
-    user.role === "CITIZEN" &&
-    !complaint.citizen.equals(user._id) &&
-    !complaint.supporters.includes(user._id)
-  ) {
-    throw new ApiError(403, "Access denied");
+  // ============= Access Control =============
+  
+  // For CITIZEN role
+  if (user.role === "CITIZEN") {
+    const isOwner = complaint.citizen.equals(user._id);
+    
+    // Proper supporter check
+    const isSupporter = complaint.supporters.some(
+      (supporter) => supporter._id.equals(user._id)
+    );
+
+    if (!isOwner && !isSupporter) {
+      throw new ApiError(403, "Access denied");
+    }
   }
 
+  // For OFFICER role
   if (
     user.role === "OFFICER" &&
     !complaint.assignedTo?.equals(user._id)
@@ -276,9 +290,10 @@ export const getComplaintById = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Access denied");
   }
 
-  return res.status(201).json(
-    new ApiResponse({ message: "Complaint fetched successfully",
-      data : {complaint},
+  return res.status(200).json( 
+    new ApiResponse({ 
+      message: "Complaint fetched successfully",
+      data: { complaint },
     })
   );
 });
@@ -320,7 +335,7 @@ export const verifyComplaint = asyncHandler(async (req, res) => {
 });
 
 
-  // 🔔 Notification
+  //  Notification
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
@@ -365,12 +380,12 @@ export const assignComplaint = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Officer not found");
   }
 
-  // ✅ CHANGED: status enum
+  // status enum
   complaint.assignedTo = officerId;
   complaint.status = "ASSIGNED";
   await complaint.save();
 
-  // 🔔 Officer notification
+  // Officer notification
   await sendNotification({
     userId: officer._id,
     name: officer.name,
@@ -382,7 +397,7 @@ export const assignComplaint = asyncHandler(async (req, res) => {
     complaintId: complaint._id,
   });
 
-  // 🔔 Citizen notification
+  // Citizen notification
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
@@ -483,7 +498,7 @@ export const resolveComplaint = asyncHandler(async (req, res) => {
   complaintId: complaint._id,
 });
 
-  // 🔔 Notification to citizen
+  // Notification to citizen
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
@@ -528,7 +543,7 @@ export const closeComplaint = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Citizen not found");
   }
 
-  // 🔔 Notification to citizen
+  //  Notification to citizen
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
@@ -567,7 +582,7 @@ export const upvoteComplaint = asyncHandler(async (req, res) => {
 
   await complaint.save();
 
-  // 🔥 SINGLE SOURCE OF TRUTH
+  // SINGLE SOURCE OF TRUTH
   io.to("feed:all").emit("complaint:upvote", {
     complaintId: complaint._id.toString(),
     upvoteCount: complaint.upvoteCount,
@@ -578,77 +593,6 @@ export const upvoteComplaint = asyncHandler(async (req, res) => {
     upvoteCount: complaint.upvoteCount,
     priority: complaint.priority,
   });
-});
-
-
-// Citizen → submit feedback
-export const submitFeedback = asyncHandler(async (req, res) => {
-  const { id } = req.params; // complaintId
-  const { rating, comment } = req.body;
-  const userId = req.user._id;
-
-
-  // ✅ Strict rating validation
-  if (typeof rating !== "number" || rating < 1 || rating > 5) {
-    throw new ApiError(400, "Rating must be a number between 1 and 5");
-  }
-
-  const complaint = await Complaint.findById(id);
-  if (!complaint) {
-    throw new ApiError(404, "Complaint not found");
-  }
-  
-  // ✅ Ownership check
-  if (!complaint.citizen.equals(userId)) {
-    throw new ApiError(403, "You can only give feedback on your own complaints");
-  }
-  
-  // ✅ Feedback allowed after RESOLVED or CLOSED
-  if (!["RESOLVED", "CLOSED"].includes(complaint.status)) {
-    throw new ApiError(
-      400,
-      "Feedback can only be submitted after complaint is resolved or closed"
-    );
-  }
-
-  // ✅ Prevent duplicate feedback
-  const existingFeedback = await Feedback.findOne({
-    complaint: id,
-    user: userId,
-  });
-
-  if (existingFeedback) {
-    throw new ApiError(
-      400,
-      "You have already submitted feedback for this complaint"
-    );
-  }
-
-  // ✅ Create feedback
-  const feedback = await Feedback.create({
-    complaint: id,
-    user: userId,
-    rating,
-    comment,
-  });
-
-  complaint.feedback = feedback._id;
-  await complaint.save();
-
-  // 🏆 Reward for feedback
-  await addRewardPoints({
-  userId,
-  points: 3,
-  reason: "FEEDBACK_GIVEN",
-  complaintId: complaint._id,
-});
-
-  return res.status(201).json(
-    new ApiResponse({
-      message: "Feedback submitted successfully",
-      data: { feedback },
-    })
-  );
 });
 
 //feed
@@ -664,7 +608,7 @@ export const getFeed = asyncHandler(async (req, res) => {
   filter.municipalId = req.user.municipalId;
 }
 
-  // 🟢 DISTRICT LEVEL
+  // DISTRICT LEVEL
   if (
     ["CITIZEN", "OFFICER", "DEPT_HEAD", "DISTRICT_ADMIN"].includes(role)
   ) {
@@ -680,7 +624,7 @@ export const getFeed = asyncHandler(async (req, res) => {
     };
   }
 
-  // 🔵 STATE LEVEL
+  //  STATE LEVEL
   else if (role === "STATE_ADMIN") {
     if (!location?.state) {
       return res.status(400).json({
@@ -694,7 +638,7 @@ export const getFeed = asyncHandler(async (req, res) => {
     };
   }
 
-  // 🔴 CENTRAL / SUPER → ALL INDIA
+  //  CENTRAL / SUPER → ALL INDIA
   else if (["CENTRAL_ADMIN", "SUPER_ADMIN"].includes(role)) {
     // no extra filter
   }
@@ -709,7 +653,7 @@ export const getFeed = asyncHandler(async (req, res) => {
     .populate("citizen", "name avatar")
     .sort({ createdAt: -1 });
 
-  // 🔥 Sort by upvotes length (reliable)
+  //  Sort by upvotes length (reliable)
   complaints.sort(
     (a, b) => b.upvotes.length - a.upvotes.length
   );

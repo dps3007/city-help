@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   getComplaintById,
   submitFeedback,
+  getComplaintFeedbacks,
 } from "../../services/complaint.service";
 
 import { useAuth } from "../../context/AuthContext";
@@ -22,6 +23,10 @@ function ComplaintDetail() {
   const [error, setError] = useState("");
   const [showFeedback, setShowFeedback] = useState(false);
   const [focusMap, setFocusMap] = useState(false);
+  
+  // States for multiple feedbacks
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [userHasGivenFeedback, setUserHasGivenFeedback] = useState(false);
 
   /* ---------------- FETCH ---------------- */
 
@@ -38,9 +43,32 @@ function ComplaintDetail() {
     }
   };
 
+  // Fetch all feedbacks for this complaint
+  const fetchFeedbacks = async () => {
+    try {
+      const data = await getComplaintFeedbacks(id);
+      setFeedbacks(data.feedbacks || []);
+      
+      // Check if current user has already given feedback
+      const hasFeedback = data.feedbacks?.some(
+        (fb) => fb.user._id === user?._id
+      );
+      setUserHasGivenFeedback(hasFeedback);
+    } catch (err) {
+      console.error("Error fetching feedbacks:", err);
+    }
+  };
+
   useEffect(() => {
     fetchComplaint();
   }, [id]);
+
+  // Fetch feedbacks when complaint is loaded and is resolved/closed
+  useEffect(() => {
+    if (complaint && (complaint.status === "RESOLVED" || complaint.status === "CLOSED")) {
+      fetchFeedbacks();
+    }
+  }, [complaint?.status, id]);
 
   /* ---------------- FEEDBACK ---------------- */
 
@@ -49,7 +77,9 @@ function ComplaintDetail() {
       await submitFeedback(id, { rating, comment });
       alert("Feedback submitted successfully");
       setShowFeedback(false);
-      fetchComplaint();
+      // Refresh both complaint and feedbacks
+      await fetchComplaint();
+      await fetchFeedbacks();
     } catch (err) {
       alert(err?.response?.data?.message || "Failed to submit feedback");
     }
@@ -71,24 +101,25 @@ function ComplaintDetail() {
     complaint.status === "RESOLVED" ||
     complaint.status === "CLOSED";
 
-  const isOwnerOrSupporter =
-    complaint.citizen === user?._id ||
-    complaint.supporters?.some(
-      (id) => id === user?._id
-    );
-
-  const canGiveFeedback =
-    user?.role === "CITIZEN" &&
-    isOwnerOrSupporter &&
-    resolvedOrClosed &&
-    !complaint.feedback;
-
   const hasGeo =
     complaint.location?.geo?.coordinates?.length === 2;
 
   const [lng, lat] = hasGeo
     ? complaint.location.geo.coordinates
     : [];
+
+  // NEW: Check if user can give feedback
+  const isOwnerOrSupporter =
+    complaint.citizen?._id === user?._id ||
+    complaint.supporters?.some((supporter) => 
+      supporter._id === user?._id || supporter === user?._id
+    );
+
+  const canGiveFeedback =
+    user?.role === "CITIZEN" &&
+    isOwnerOrSupporter &&
+    resolvedOrClosed &&
+    !userHasGivenFeedback;
 
   /* ================= UI ================= */
 
@@ -247,43 +278,91 @@ function ComplaintDetail() {
         </div>
       )}
 
-      {/* FEEDBACK */}
+      {/* FEEDBACK - NEW: Multiple feedbacks display */}
       {resolvedOrClosed && (
         <div className="bg-white rounded-xl shadow p-6 space-y-4">
           <h2 className="text-lg font-semibold">Feedback</h2>
 
-          {complaint.feedback ? (
-            <div>
-              <div className="flex justify-between mb-3">
-                <div className="flex gap-1 text-blue-700">
-                  {Array.from({
-                    length: complaint.feedback.rating,
-                  }).map((_, i) => (
-                    <span key={i}>★</span>
-                  ))}
+          {/* Display all feedbacks */}
+          {feedbacks.length > 0 ? (
+            <div className="space-y-4 mb-4">
+              {feedbacks.map((feedback) => (
+                <div
+                  key={feedback._id}
+                  className="border-b pb-4 last:border-b-0 last:pb-0"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-800">
+                        {feedback.user.name}
+                      </span>
+                      {/* Owner badge */}
+                      {(feedback.user._id === complaint.citizen?._id || 
+                        feedback.user._id === complaint.citizen) && (
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                          Owner
+                        </span>
+                      )}
+                      {/* Supporter badge */}
+                      {complaint.supporters?.some(s => 
+                        (s._id === feedback.user._id || s === feedback.user._id) && 
+                        feedback.user._id !== complaint.citizen?._id &&
+                        feedback.user._id !== complaint.citizen
+                      ) && (
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                          Supporter
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-sm text-gray-500">
+                      {new Date(feedback.createdAt).toLocaleDateString("en-GB")}
+                    </span>
+                  </div>
+
+                  {/* Star rating */}
+                  <div className="flex gap-1 text-yellow-500 mb-2">
+                    {Array.from({ length: feedback.rating }).map((_, i) => (
+                      <span key={i}>★</span>
+                    ))}
+                    {Array.from({ length: 5 - feedback.rating }).map((_, i) => (
+                      <span key={i} className="text-gray-300">
+                        ★
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Comment */}
+                  {feedback.comment && (
+                    <p className="text-gray-700 text-sm">{feedback.comment}</p>
+                  )}
                 </div>
-                <span className="text-sm text-gray-500">
-                  {new Date(
-                    complaint.feedback.createdAt
-                  ).toLocaleDateString("en-GB")}
-                </span>
-              </div>
-              <p className="text-gray-800">
-                {complaint.feedback.comment}
-              </p>
+              ))}
             </div>
-          ) : canGiveFeedback ? (
-            <Button
-              onClick={() => setShowFeedback(true)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Submit Feedback
-            </Button>
           ) : (
-            <p className="text-sm text-gray-500">
-              Only affected citizens can submit feedback.
+            <p className="text-sm text-gray-500 mb-4">
+              No feedback submitted yet.
             </p>
           )}
+
+          {/* Feedback button or message */}
+          {canGiveFeedback ? (
+            <Button
+              onClick={() => setShowFeedback(true)}
+              className="bg-blue-600 hover:bg-blue-700 w-full"
+            >
+              Submit Your Feedback
+            </Button>
+          ) : userHasGivenFeedback ? (
+            <p className="text-sm text-green-600">
+            </p>
+          ) : !resolvedOrClosed ? (
+            <p className="text-sm text-gray-500">
+              Feedback will be available once the complaint is resolved or closed.
+            </p>
+          ) : !isOwnerOrSupporter ? (
+            <p className="text-sm text-gray-500">
+            </p>
+          ) : null}
         </div>
       )}
 

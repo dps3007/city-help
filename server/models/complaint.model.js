@@ -125,11 +125,12 @@ const complaintSchema = new Schema(
       default: null,
     },
 
-    feedback: {
-      type: Schema.Types.ObjectId,
-      ref: "Feedback",
-      default: null,
-    },
+    feedback: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Feedback",
+      }
+    ],
 
     /* ================= CROWD + PRIORITY ================= */
     upvotes: [

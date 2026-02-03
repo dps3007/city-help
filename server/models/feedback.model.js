@@ -7,7 +7,7 @@ const feedbackSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Complaint",
       required: true,
-      unique: true // one feedback per complaint
+      index: true
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -28,5 +28,6 @@ const feedbackSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+feedbackSchema.index({ complaint: 1, user: 1 }, { unique: true });
 
 export const Feedback = mongoose.model("Feedback", feedbackSchema);

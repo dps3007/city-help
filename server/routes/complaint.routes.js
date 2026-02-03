@@ -16,9 +16,9 @@ import {
   resolveComplaint,
   closeComplaint,
   upvoteComplaint,
-  submitFeedback,
   getFeed,
 } from "../controllers/complaint.controller.js";
+import { createFeedback } from "../controllers/feedback.controller.js";
 
 const router = Router();
 
@@ -59,7 +59,7 @@ router.patch("/:id/close", verifyJWT, checkRole("DEPT_HEAD"), closeComplaint);
 
 router.post("/:id/upvote", verifyJWT, checkRole("CITIZEN"), upvoteComplaint);
 
-router.post("/:id/feedback", verifyJWT, checkRole("CITIZEN"), submitFeedback);
+router.post("/:id/feedback", verifyJWT, checkRole("CITIZEN"), createFeedback);
 
 /* ================== GET BY ID (LAST!) ================== */
 router.get("/:id", verifyJWT, getComplaintById);

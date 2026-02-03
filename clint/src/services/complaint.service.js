@@ -36,8 +36,16 @@ export const closeComplaint = async (id) => {
 };
 
 export const submitFeedback = async (id, data) => {
-  const res = await api.post(`/complaints/${id}/feedback`, data);
+  const res = await api.post(`complaints/${id}/feedback`, {
+    complaintId: id,
+    ...data
+  });
   return res.data;
+};
+
+export const getComplaintFeedbacks = async (complaintId) => {
+  const res = await api.get(`/feedback/complaint/${complaintId}`);
+  return res.data.data;
 };
 
 export const getMyComplaints = async () => {
