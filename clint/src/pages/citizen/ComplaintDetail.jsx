@@ -265,7 +265,7 @@ function ComplaintDetail() {
                 <span className="text-sm text-gray-500">
                   {new Date(
                     complaint.feedback.createdAt
-                  ).toLocaleDateString()}
+                  ).toLocaleDateString("en-GB")}
                 </span>
               </div>
               <p className="text-gray-800">

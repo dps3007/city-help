@@ -5,7 +5,8 @@ import {
   updateCurrentUser,
   getMyAllComplaints,
   getMyComplaintById,
-  updateAvatar 
+  updateAvatar,
+  getOfficersByDepartment
 } from "../controllers/user.controller.js";
 import upload from "../middlewares/upload.middleware.js";
 
@@ -22,9 +23,10 @@ router.patch(
   updateAvatar
 );
 
-
 // update user
 router.patch("/me", verifyJWT, updateCurrentUser);
+
+router.get("/officers", verifyJWT, getOfficersByDepartment);
 
 // get complaints by user
 router.get("/my-complaints", verifyJWT, getMyAllComplaints);

@@ -178,15 +178,28 @@ export const getAdminComplaints = asyncHandler(async (req, res) => {
 
   switch (req.user.role) {
     case "STATE_ADMIN":
-      filter["location.state"] = req.user.state;
+      filter["location.state"] = {
+        $regex: `^${req.user.location.state}$`,
+        $options: "i",
+      };
       break;
 
     case "DISTRICT_ADMIN":
-      filter["location.district"] = req.user.district;
+      filter["location.district"] = {
+        $regex: `^${req.user.location.district}$`,
+        $options: "i",
+      };
       break;
 
     case "DEPT_HEAD":
-      filter.department = req.user.department;
+      filter.category = {
+        $regex: `^${req.user.department}$`,
+        $options: "i",
+      };
+      filter["location.district"] = {
+        $regex: `^${req.user.location.district}$`,
+        $options: "i",
+      };
       break;
 
     case "OFFICER":

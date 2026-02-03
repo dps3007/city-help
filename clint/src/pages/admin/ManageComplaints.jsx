@@ -11,6 +11,8 @@ import {
 import { useRole } from "../../hooks/useRole";
 import { useAuth } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
+import api from "../../services/api";
+
 
 /* ---------------- constants ---------------- */
 
@@ -54,6 +56,17 @@ function ManageComplaints() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
+  const [officers, setOfficers] = useState([]);
+  const [assigningComplaint, setAssigningComplaint] = useState(null);
+
+  const fetchOfficers = async (category) => {
+    const res = await api.get(
+      `/users/officers?department=${category}`
+    );
+    setOfficers(res.data.data);
+  };
+
+
   useEffect(() => {
     loadComplaints();
   }, []);
@@ -90,10 +103,9 @@ function ManageComplaints() {
 
         case "ASSIGNED":
           if (complaint.status !== "VERIFIED") return;
-          const officerId = prompt("Enter Officer ID");
-          if (!officerId) return;
-          await assignComplaint(complaint._id, { officerId });
-          break;
+          setAssigningComplaint(complaint);
+          await fetchOfficers(complaint.category);
+          return;
 
         case "IN_PROGRESS":
           if (complaint.status !== "ASSIGNED") return;
@@ -252,7 +264,7 @@ function ManageComplaints() {
                 <td className="px-4 py-3">
                   <select
                     value={c.status}
-                    disabled={updatingId === c._id}
+                    disabled={updatingId === c._id || assigningComplaint}
                     onChange={(e) =>
                       handleStatusChange(c, e.target.value)
                     }
@@ -260,7 +272,7 @@ function ManageComplaints() {
                       ${STATUS_COLORS[c.status]}`}
                   >
                     {STATUS_OPTIONS.map((s) => (
-                      <option key={s} value={s}>
+                      <option key={s} value={s} disabled={c.status === "ASSIGNED" && s === "ASSIGNED"}>
                         {s}
                       </option>
                     ))}
@@ -296,6 +308,55 @@ function ManageComplaints() {
           </tbody>
         </table>
       </div>
+
+        {assigningComplaint && (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+              <div className="bg-white rounded-xl p-6 w-96 space-y-4">
+                <h3 className="text-lg font-semibold">
+                  Assign Officer ({assigningComplaint.category})
+                </h3>
+
+                {officers.length === 0 && (
+                  <p className="text-sm text-gray-500">
+                    No officers found for this department
+                  </p>
+                )}
+
+                <ul className="space-y-2 max-h-60 overflow-y-auto">
+                  {officers.map((o) => (
+                    <li
+                      key={o._id}
+                      onClick={async () => {
+                        try {
+                          setUpdatingId(assigningComplaint._id);
+                          await assignComplaint(assigningComplaint._id, {
+                            officerId: o._id,
+                          });
+                          setAssigningComplaint(null);
+                          await loadComplaints();
+                        } catch (e) {
+                          alert("Assignment failed");
+                        } finally {
+                          setUpdatingId(null);
+                        }
+                      }}
+                      className="cursor-pointer p-3 rounded-lg border hover:bg-blue-50"
+                    >
+                      <p className="font-medium">{o.name}</p>
+                      <p className="text-xs text-gray-500">{o.email}</p>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() => setAssigningComplaint(null)}
+                  className="w-full py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
 
       {/* Pagination */}
       {totalPages > 1 && (

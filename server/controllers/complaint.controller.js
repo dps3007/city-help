@@ -346,9 +346,13 @@ export const assignComplaint = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Complaint not found");
   }
 
-  // ✅ CHANGED: prevent reassignment
   if (complaint.status === "ASSIGNED") {
-    throw new ApiError(400, "Complaint already assigned");
+    return res.status(200).json(
+      new ApiResponse({
+        message: "Complaint already assigned",
+        data: { complaint },
+      })
+    );
   }
 
   const citizen = await User.findById(complaint.citizen);

@@ -181,7 +181,6 @@ export const updateCurrentUser = asyncHandler(async (req, res) => {
   );
 });
 
-
 // Get all complaints of the logged-in user
 export const getMyAllComplaints = asyncHandler(async (req, res) => {
   const complaints = await Complaint.find({
@@ -213,6 +212,28 @@ export const getMyComplaintById = asyncHandler(async (req, res) => {
     new ApiResponse({
       data: { complaint },
       message: "complaint fetched successfully",
+    })
+  );
+});
+
+// get officer by department for assigning
+// controllers/user.controller.js
+export const getOfficersByDepartment = asyncHandler(async (req, res) => {
+  const { department } = req.query;
+
+  if (!department) {
+    throw new ApiError(400, "Department required");
+  }
+
+  const officers = await User.find({
+    role: "OFFICER",
+    department,
+    isActive: true,
+  }).select("_id name email");
+
+  res.status(200).json(
+    new ApiResponse({
+      data: officers,
     })
   );
 });
