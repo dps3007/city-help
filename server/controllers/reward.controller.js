@@ -1,3 +1,4 @@
+import { redis } from "../config/redis.js";
 import Reward from "../models/reward.model.js";
 import User from "../models/user.model.js";
 
@@ -16,7 +17,7 @@ export const getMyRewards = asyncHandler(async (req, res) => {
     new ApiResponse({
       data: {
         rewards,
-        totalPoints: req.user.communityPoints, // ✅ SOURCE OF TRUTH
+        totalPoints: req.user.communityPoints,
       },
       message: "User rewards fetched successfully",
     })
@@ -42,7 +43,7 @@ export const getUserRewards = asyncHandler(async (req, res) => {
     new ApiResponse({
       data: {
         rewards,
-        totalPoints: user.communityPoints, // ✅ SOURCE OF TRUTH
+        totalPoints: user.communityPoints, 
       },
       message: "User rewards fetched successfully",
     })
@@ -59,20 +60,13 @@ export const addRewardPoints = async ({
     throw new Error("Invalid reward data");
   }
 
-  if (points <= 0) {
-    throw new Error("Reward points must be positive");
-  }
-
-  // 🔒 Prevent duplicate rewards
   const exists = await Reward.findOne({
     userId,
     reason,
     complaintId,
   });
-
   if (exists) return;
 
-  // 1️⃣ Reward history (audit)
   await Reward.create({
     userId,
     points,
@@ -80,10 +74,18 @@ export const addRewardPoints = async ({
     complaintId,
   });
 
-  // 2️⃣ Update TOTAL points (communityPoints)
-  await User.findByIdAndUpdate(userId, {
-    $inc: { communityPoints: points },
-  });
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $inc: { communityPoints: points } },
+    { new: true }
+  );
+
+  //REDIS INVALIDATION 
+  await redis.del("leaderboard:global");
+  if (user?.municipalId) {
+    await redis.del(`leaderboard:local:${user.municipalId}`);
+  }
+  await redis.del("dashboard:*");
 };
 
 export const getRewardHistory = asyncHandler(async (req, res) => {

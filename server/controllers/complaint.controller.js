@@ -1,4 +1,5 @@
 import { io } from "../server.js";
+import { redis } from "../config/redis.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import Complaint from "../models/complaint.model.js";
 import { addRewardPoints } from "./reward.controller.js";
@@ -6,7 +7,6 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { sendNotification } from "./notification.controller.js";
 import User from "../models/user.model.js";
-import { Feedback } from "../models/feedback.model.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 import Municipal from "../models/municipal.model.js";
 
@@ -191,7 +191,9 @@ export const createComplaint = asyncHandler(async (req, res) => {
     await complaint.save();
   }
 
-  /* ------------------ RESPONSE ------------------ */
+  await redis.del("dashboard:*");
+  await redis.del("feed:*");
+
   return res.status(201).json(
     new ApiResponse({
       message: "Complaint created successfully",
@@ -334,7 +336,6 @@ export const verifyComplaint = asyncHandler(async (req, res) => {
   complaintId: complaint._id,
 });
 
-
   //  Notification
   await sendNotification({
     userId: citizen._id,
@@ -346,6 +347,8 @@ export const verifyComplaint = asyncHandler(async (req, res) => {
     email: citizen.email,
     complaintId: complaint._id,
   });
+
+  await redis.del("dashboard:*");
 
   return res.status(200).json(
     new ApiResponse({ message: "Complaint verified successfully" })
@@ -409,6 +412,8 @@ export const assignComplaint = asyncHandler(async (req, res) => {
     complaintId: complaint._id,
   });
 
+  await redis.del("dashboard:*");
+
   return res.status(201).json(
     new ApiResponse({
       message: "Complaint assigned successfully",
@@ -455,6 +460,8 @@ export const startWork = asyncHandler(async (req, res) => {
     email: citizen.email,
     complaintId: complaint._id,
   });
+
+  await redis.del("dashboard:*");
 
   return res.status(200).json(
     new ApiResponse({ message: "Work started successfully", 
@@ -510,6 +517,8 @@ export const resolveComplaint = asyncHandler(async (req, res) => {
     complaintId: complaint._id,
   });
 
+  await redis.del("dashboard:*");
+
   return res.status(200).json(
     new ApiResponse({ message: "Complaint resolved successfully",
       data : {complaint},
@@ -555,6 +564,8 @@ export const closeComplaint = asyncHandler(async (req, res) => {
     complaintId: complaint._id,
   });
 
+  await redis.del("dashboard:*");
+
   return res.status(200).json(
     new ApiResponse({
       message: "Complaint closed successfully",
@@ -589,6 +600,8 @@ export const upvoteComplaint = asyncHandler(async (req, res) => {
     priority: complaint.priority,
   });
 
+  await redis.del("feed:*");
+
   res.json({
     upvoteCount: complaint.upvoteCount,
     priority: complaint.priority,
@@ -598,6 +611,13 @@ export const upvoteComplaint = asyncHandler(async (req, res) => {
 //feed
 export const getFeed = asyncHandler(async (req, res) => {
   const { role, location } = req.user;
+
+  const cacheKey = `feed:${role}:${location?.state || "all"}:${location?.district || "all"}`;
+
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    return res.status(200).json(cached);
+  }
 
   // Base filter → only complaints with attachments
   let filter = {
@@ -657,6 +677,8 @@ export const getFeed = asyncHandler(async (req, res) => {
   complaints.sort(
     (a, b) => b.upvotes.length - a.upvotes.length
   );
+
+  await redis.set(cacheKey, complaints, { ex: 30 });
 
   res.status(200).json(complaints);
 });

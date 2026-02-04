@@ -1,3 +1,4 @@
+import { redis } from "../config/redis.js";
 import { Feedback } from "../models/feedback.model.js";
 import  Complaint from "../models/complaint.model.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -47,11 +48,19 @@ export const createFeedback = asyncHandler(async (req, res) => {
   complaint.feedback.push(feedback._id);
   await complaint.save();
 
+  await addRewardPoints({
+      userId,
+      points: 3,
+      reason: "FEEDBACK_GIVEN",
+      complaintId: complaint._id,
+    });
+
+  await redis.del("dashboard:*");
+
   return res.status(201).json(
     new ApiResponse({ message: "Feedback submitted", data: { feedback } })
   );
 });
-
 
 // Get all feedbacks for a complaint
 export const getComplaintFeedbacks = asyncHandler(async (req, res) => {
@@ -60,6 +69,8 @@ export const getComplaintFeedbacks = asyncHandler(async (req, res) => {
   const feedbacks = await Feedback.find({ complaint: complaintId })
     .populate("user", "name email avatar")
     .sort({ createdAt: -1 });
+
+    await redis.del("feed:*");
 
   return res.status(200).json(
     new ApiResponse({

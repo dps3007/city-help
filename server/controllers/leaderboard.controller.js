@@ -1,31 +1,44 @@
+import { redis } from "../config/redis.js";
 import User from "../models/user.model.js";
 
-/// GLOBAL LEADERBOARD
 export const getGlobalLeaderboard = async (req, res) => {
-  try {
-    const users = await User.find({ role: "CITIZEN" })
-      .select("name municipalId communityPoints")
-      .sort({ communityPoints: -1 })
-      .limit(50);
+  const cacheKey = "leaderboard:global";
 
-    res.status(200).json(users);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch global leaderboard" });
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    return res.status(200).json(cached);
   }
+
+  const users = await User.find({ role: "CITIZEN" })
+    .select("name municipalId communityPoints")
+    .sort({ communityPoints: -1 })
+    .limit(50)
+    .lean();
+
+  await redis.set(cacheKey, users, { ex: 120 });
+
+  res.status(200).json(users);
 };
 
-/// LOCAL LEADERBOARD
 export const getLocalLeaderboard = async (req, res) => {
-  try {
-    const { municipalId } = req.params;
+  const { municipalId } = req.params;
+  const cacheKey = `leaderboard:local:${municipalId}`;
 
-    const users = await User.find({ municipalId, role: "CITIZEN" })
-      .select("name municipalId communityPoints")
-      .sort({ communityPoints: -1 })
-      .limit(50);
-
-    res.status(200).json(users);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch local leaderboard" });
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    return res.status(200).json(cached);
   }
+
+  const users = await User.find({
+    municipalId,
+    role: "CITIZEN",
+  })
+    .select("name municipalId communityPoints")
+    .sort({ communityPoints: -1 })
+    .limit(50)
+    .lean();
+
+  await redis.set(cacheKey, users, { ex: 120 });
+
+  res.status(200).json(users);
 };

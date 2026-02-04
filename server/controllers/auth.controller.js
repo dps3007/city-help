@@ -77,7 +77,7 @@ export const login = asyncHandler(async (req, res) => {
     new ApiResponse({
       message: "Login successful",
       data: {
-        user: safeUser,        // ✅ FULL DB USER
+        user: safeUser, 
         accessToken,
         refreshToken,
       },

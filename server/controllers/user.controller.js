@@ -6,7 +6,6 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 import Municipal from "../models/municipal.model.js";
 
-
 //updateAvtar
 export const updateAvatar = asyncHandler(async (req, res) => {
   const file = req.file;

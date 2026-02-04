@@ -1,3 +1,7 @@
+import dotenv from "dotenv";
+dotenv.config();
+
+import { redis } from "../config/redis.js";
 import asyncHandler from '../utils/asyncHandler.js';
 import User from '../models/user.model.js';
 import Complaint from '../models/complaint.model.js';
@@ -6,12 +10,22 @@ import ApiError from "../utils/ApiError.js";
 import { sendEmail } from "../utils/mail.js";
 import { ROLE_LEVEL } from '../middlewares/role.middleware.js';
 
-
 // DASHBOARD STATS 
 export const getDashboardStats = asyncHandler(async (req, res) => {
-  res.set("Cache-Control", "no-store");
-
   const { role, location, department, _id } = req.user;
+
+  const cacheKey = `dashboard:${role}:${location?.state || "all"}:${location?.district || "all"}:${department || "all"}:${_id}`;
+
+  // cache
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    return res.status(200).json(
+      new ApiResponse({
+        data: cached,
+        cached: true,
+      })
+    );
+  }
 
   let complaintFilter = {};
   let userFilter = {};
@@ -19,64 +33,32 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
   switch (role) {
     case "SUPER_ADMIN":
     case "CENTRAL_ADMIN":
-      // no filter
       break;
 
     case "STATE_ADMIN":
-      complaintFilter["location.state"] = {
-        $regex: `^${location.state}$`,
-        $options: "i",
-      };
-      userFilter["location.state"] = {
-        $regex: `^${location.state}$`,
-        $options: "i",
-      };
+      complaintFilter["location.state"] = new RegExp(`^${location.state}$`, "i");
+      userFilter["location.state"] = new RegExp(`^${location.state}$`, "i");
       break;
 
     case "DISTRICT_ADMIN":
-      complaintFilter["location.state"] = {
-        $regex: `^${location.state}$`,
-        $options: "i",
-      };
-      complaintFilter["location.district"] = {
-        $regex: `^${location.district}$`,
-        $options: "i",
-      };
-      userFilter["location.district"] = {
-        $regex: `^${location.district}$`,
-        $options: "i",
-      };
+      complaintFilter["location.state"] = new RegExp(`^${location.state}$`, "i");
+      complaintFilter["location.district"] = new RegExp(`^${location.district}$`, "i");
+      userFilter["location.district"] = new RegExp(`^${location.district}$`, "i");
       break;
 
     case "DEPT_HEAD":
-      complaintFilter["location.district"] = {
-        $regex: `^${location.district}$`,
-        $options: "i",
-      };
-      complaintFilter.category = {
-        $regex: `^${department}$`,
-        $options: "i",
-      };
+      complaintFilter["location.district"] = new RegExp(`^${location.district}$`, "i");
+      complaintFilter.category = new RegExp(`^${department}$`, "i");
       break;
 
     case "OFFICER":
-      complaintFilter.category = {
-        $regex: `^${department}$`,
-        $options: "i",
-      };
-      complaintFilter.$or = [
-        { assignedTo: _id },
-      ];
+      complaintFilter.category = new RegExp(`^${department}$`, "i");
+      complaintFilter.assignedTo = _id;
       break;
 
     case "WORKER":
-      complaintFilter.category = {
-        $regex: `^${department}$`,
-        $options: "i",
-      };
-      complaintFilter.$or = [
-        { assignedWorker: _id },
-      ];
+      complaintFilter.category = new RegExp(`^${department}$`, "i");
+      complaintFilter.assignedWorker = _id;
       break;
 
     default:
@@ -97,21 +79,20 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     Complaint.countDocuments({ ...complaintFilter, status: "CLOSED" }),
   ]);
 
-  const pendingComplaints =
-    totalComplaints - resolvedComplaints - closedComplaints;
+  const data = {
+    totalUsers,
+    totalComplaints,
+    complaintSubmitted: submittedComplaints,
+    resolvedComplaints,
+    closedComplaints,
+    pendingComplaints:
+      totalComplaints - resolvedComplaints - closedComplaints,
+  };
 
-  return res.status(200).json(
-    new ApiResponse({
-      data: {
-        totalUsers,
-        totalComplaints,
-        complaintSubmitted: submittedComplaints,
-        resolvedComplaints,
-        closedComplaints,
-        pendingComplaints,
-      },
-    })
-  );
+  // Save to cache (TTL = 60 sec)
+  await redis.set(cacheKey, data, { ex: 60 });
+
+  return res.status(200).json(new ApiResponse({ data }));
 });
 
 // update user role with proper checks
@@ -155,6 +136,9 @@ export const manageUser = asyncHandler(async (req, res) => {
   { role },
   { new: true, runValidators: true }
 );
+
+  //Redis invalidate 
+  await redis.del("dashboard:*");
 
   return res.status(200).json(
     new ApiResponse({
@@ -261,21 +245,14 @@ export const getAllUsers = asyncHandler(async (req, res) => {
 // Create a new user (admin)
 export const createUser = asyncHandler(async (req, res) => {
   const { name, email, role, department } = req.body;
-
-  console.log("Create User Request Body:", req.body);
-  console.log("department:", department);
   
-
   if (role === "DEPT_HEAD" && !department) {
     throw new ApiError(400, "Department is required for Dept Head");
   } 
 
-  console.log("Validated role:", role);
-
   if (!ROLE_LEVEL.hasOwnProperty(role)) {
   throw new ApiError(400, "Invalid role");
 }
-
 
   if (!name || !email || !role) {
     throw new ApiError(400, "Required fields missing");
@@ -288,9 +265,6 @@ export const createUser = asyncHandler(async (req, res) => {
   const creatorLevel = ROLE_LEVEL[req.user.role];
   const newUserLevel = ROLE_LEVEL[role];
 
-  console.log("Creator Level:", creatorLevel);
-  console.log("New User Level:", newUserLevel);
-
   if (newUserLevel >= creatorLevel) {
     throw new ApiError(403, "Cannot create equal or higher role");
   }
@@ -300,10 +274,8 @@ export const createUser = asyncHandler(async (req, res) => {
     throw new ApiError(409, "User already exists");
   }
 
-  const tempPassword = "Welcome@123";
+  const tempPassword = process.env.TEMP_USER_PASSWORD;
 
-  console.log("Creating user with email:", email);
-  console.log("Assigned department:", department);
   const user = await User.create({
     name,
     email,
@@ -313,8 +285,6 @@ export const createUser = asyncHandler(async (req, res) => {
     password: tempPassword,
     isActive: true,
   });
-
-  console.log("User created:", user._id);
 
   await sendEmail({
     email: user.email,
@@ -327,6 +297,9 @@ export const createUser = asyncHandler(async (req, res) => {
       },
     },
   });
+
+  // Redis invalidate
+  await redis.del("dashboard:*");
 
   return res.status(201).json(
     new ApiResponse({ message: "User created successfully" })
