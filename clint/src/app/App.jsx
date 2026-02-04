@@ -1,9 +1,12 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+// Public pages
+import Landing from "../pages/Landing";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 
+// Layout
 import DashboardLayout from "../components/layout/DashboardLayout";
 
 // Citizen
@@ -33,24 +36,28 @@ function App() {
 
   return (
     <Routes>
-      {/* ================= NOT AUTHENTICATED ================= */}
-      {!isAuthenticated ? (
+      {/* ================= PUBLIC ROUTES ================= */}
+      {!isAuthenticated && (
         <>
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </>
-      ) : (
+      )}
+
+      {/* ================= PROTECTED ROUTES ================= */}
+      {isAuthenticated && (
         <>
-          {/* block auth pages */}
+          {/* block public auth pages */}
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="/register" element={<Navigate to="/" replace />} />
 
           {/* ================= COMMON DASHBOARD LAYOUT ================= */}
           <Route element={<DashboardLayout />}>
-            {/* ROOT DASHBOARD */}
+            {/* ROOT */}
             <Route
-              index
+              path="/"
               element={
                 user.role === "CITIZEN" ? (
                   <CitizenDashboard />
@@ -60,10 +67,13 @@ function App() {
               }
             />
 
-            {/* 🔥 COMMON COMPLAINT DETAIL */}
+            {/* COMMON */}
             <Route path="complaints/:id" element={<ComplaintDetail />} />
+            <Route path="feed" element={<DistrictFeed />} />
+            <Route path="leaderboard" element={<Leaderboard />} />
+            <Route path="profile" element={<Profile />} />
 
-            {/* ================= CITIZEN ROUTES ================= */}
+            {/* ================= CITIZEN ================= */}
             {user.role === "CITIZEN" && (
               <>
                 <Route path="complaints/new" element={<FileComplaint />} />
@@ -75,16 +85,9 @@ function App() {
                 />
               </>
             )}
-
-            {/* ================= DISTRICT FEED ================= */}
-            <Route path="feed" element={<DistrictFeed />} />
-
-            {/* ================= COMMON ================= */}
-            <Route path="leaderboard" element={<Leaderboard />} />
-            <Route path="profile" element={<Profile />} />
           </Route>
 
-          {/* ================= ADMIN ROUTES ================= */}
+          {/* ================= ADMIN ================= */}
           <Route path="/admin" element={<DashboardLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
