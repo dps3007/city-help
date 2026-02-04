@@ -3,6 +3,7 @@ import "./config/env.js";
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import { allowedOrigins } from "./config/cors.js";
 
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
@@ -20,11 +21,6 @@ import helmet from "helmet";
 const app = express();
 
 // Enable CORS
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-];
-
 app.use(cors({
   origin: allowedOrigins,
   credentials: true,

@@ -1,11 +1,8 @@
 import { useAuth } from "../../context/AuthContext";
-import { useTheme } from "../../context/ThemeContext";
-
 
 function Navbar() {
   const { user, logout } = useAuth();
-  const { isDarkMode, toggleTheme } = useTheme();
-
+ 
   return (
     <header className="flex items-center justify-between bg-white dark:bg-gray-900 border-b dark:border-gray-700 px-6 py-3 shadow-sm dark:shadow-lg">
       {/* Left */}

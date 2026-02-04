@@ -27,23 +27,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // 🔹 Debug socket connect / disconnect
-  useEffect(() => {
-    socket.on("connect", () => {
-      console.log("🟢 SOCKET CONNECTED:", socket.id);
-    });
-
-    socket.on("disconnect", () => {
-      console.log("🔴 SOCKET DISCONNECTED");
-    });
-
-    return () => {
-      socket.off("connect");
-      socket.off("disconnect");
-    };
-  }, []);
-
-  // 🔥 JOIN REALTIME ROOMS (CORRECT WAY)
+  //  JOIN REALTIME ROOMS 
   useEffect(() => {
     if (!user?.location) return;
 
@@ -58,15 +42,8 @@ export function AuthProvider({ children }) {
         socket.emit("join:state", state.toLowerCase());
       }
 
-      // 🔥 common feed room (ALL ADMINS WHO CAN SEE FEED)
+      //  common feed room (ALL ADMINS WHO CAN SEE FEED)
       socket.emit("join:feed");
-
-
-      console.log("🟢 joined realtime rooms", {
-        district,
-        state,
-        role: user.role,
-      });
     };
 
     // join immediately if already connected

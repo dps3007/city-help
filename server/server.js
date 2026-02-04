@@ -1,6 +1,7 @@
 import "./config/env.js";
 import app from "./app.js";
 import connectDB from "./config/db.js";
+import { allowedOrigins } from "./config/cors.js";
 
 import http from "http";
 import { Server } from "socket.io";
@@ -11,11 +12,6 @@ const PORT = process.env.PORT || 8000;
 const server = http.createServer(app);
 
 // create socket.io server
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-];
-
 export const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
