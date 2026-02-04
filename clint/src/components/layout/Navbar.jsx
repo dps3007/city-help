@@ -20,25 +20,6 @@ function Navbar() {
 
       {/* Right */}
       <div className="flex items-center gap-4">
-        {/* Theme Toggle Button */}
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="relative text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-          title="Toggle dark mode"
-        >
-          {isDarkMode ? "🌙" : "☀️"}
-        </button>
-
-        {/* Notifications (placeholder) */}
-        <button
-          type="button"
-          className="relative text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-        >
-          🔔
-          <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
-        </button>
-
         {/* User Avatar */}
         <div className="flex items-center gap-2">
           <div className="h-8 w-8  rounded-full overflow-hidden border">
