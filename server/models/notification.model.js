@@ -35,6 +35,7 @@ const notificationSchema = new Schema(
     event: {
       type: String,
       enum: [
+        "COMPLAINT_SUBMITTED",
         "COMPLAINT_VERIFIED",
         "COMPLAINT_ASSIGNED",
         "COMPLAINT_WORK_STARTED",
