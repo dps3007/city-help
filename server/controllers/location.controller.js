@@ -10,36 +10,34 @@ export const reverseGeocode = async (req, res) => {
       });
     }
 
-    const response = await axios.get(
-      "https://nominatim.openstreetmap.org/reverse",
-      {
-        params: {
-          lat,
-          lon: lng,
-          format: "json",
-          addressdetails: 1,
-        },
-        headers: {
-          "User-Agent": "CityHelp-App (boatop777@gmail.com)", // Replace with your contact info
-        },
-      }
-    );
+    const mapboxToken = process.env.MAPBOX_TOKEN;
+    if (!mapboxToken) {
+      return res.status(500).json({
+        message: "Mapbox token not configured",
+      });
+    }
 
-    const a = response.data?.address || {};
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json`;
+
+    const { data } = await axios.get(url, {
+      params: {
+        access_token: mapboxToken,
+        limit: 1,
+      },
+    });
+
+    const feature = data.features?.[0];
+    const context = feature?.context || [];
+
+    const pick = (key) =>
+      context.find((c) => c.id.includes(key))?.text || "";
 
     return res.json({
-      city:
-        a.city ||
-        a.town ||
-        a.village ||
-        a.hamlet ||
-        "",
-      district:
-        a.state_district ||
-        a.county ||
-        "",
-      state: a.state || "",
-      pincode: a.postcode || "",
+      city: pick("place"),
+      district: pick("district"),
+      state: pick("region"),
+      pincode: pick("postcode") || "", // postcode = pincode
+      localAddress: feature?.place_name || "",
     });
   } catch (error) {
     return res.status(500).json({

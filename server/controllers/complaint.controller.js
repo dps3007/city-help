@@ -120,7 +120,7 @@ export const createComplaint = asyncHandler(async (req, res) => {
       $near: {
         $geometry: {
           type: "Point",
-          coordinates: [lng, lat], // [lng, lat]
+          coordinates: [lng, lat],
         },
         $maxDistance: 100, // meters
       },
@@ -129,7 +129,6 @@ export const createComplaint = asyncHandler(async (req, res) => {
 
   /* ------------------ IF DUPLICATE → LINK USER ------------------ */
   if (existingComplaint) {
-    
     existingComplaint.supporters.addToSet(req.user._id);
     existingComplaint.upvotes.addToSet(req.user._id);
 
@@ -165,11 +164,11 @@ export const createComplaint = asyncHandler(async (req, res) => {
     attachments,
     location: {
       localAddress: location.localAddress || "",
-      city: location.city,
-      district: location.district,
-      state: location.state,
-      pincode: location.pincode,
-      autoDetected: location.autoDetected || false,
+      city: location.city || "",
+      district: location.district || "",
+      state: location.state || "",
+      pincode: location.pincode || "",   // 👈 Mapbox postcode → pincode
+      autoDetected: true,                // 👈 Mapbox auto-detect
       geo: {
         type: "Point",
         coordinates: [lng, lat],
@@ -180,15 +179,17 @@ export const createComplaint = asyncHandler(async (req, res) => {
   });
 
   /* ------------------ MUNICIPAL AUTO-DETECTION ------------------ */
-  const municipal = await Municipal.findOne({
-    "location.state": location.state.toLowerCase(),
-    "location.district": location.district.toLowerCase(),
-    isActive: true,
-  });
+  if (location.state && location.district) {
+    const municipal = await Municipal.findOne({
+      "location.state": location.state.toLowerCase(),
+      "location.district": location.district.toLowerCase(),
+      isActive: true,
+    });
 
-  if (municipal) {
-    complaint.municipalId = municipal._id;
-    await complaint.save();
+    if (municipal) {
+      complaint.municipalId = municipal._id;
+      await complaint.save();
+    }
   }
 
   await redis.del("dashboard:*");
