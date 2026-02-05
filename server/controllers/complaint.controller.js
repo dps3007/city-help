@@ -192,7 +192,9 @@ export const createComplaint = asyncHandler(async (req, res) => {
     }
   }
 
-    await sendNotification({
+  const citizen = req.user;
+  
+  await sendNotification({
     userId: citizen._id,
     name: citizen.name,
     title: "Complaint Submitted",
