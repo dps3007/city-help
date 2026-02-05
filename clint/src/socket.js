@@ -4,13 +4,12 @@ let socket;
 
 export const getSocket = () => {
   if (!socket) {
-    socket = io("https://cityhelp-backend-pngm.onrender.com/api/v1", {
+    socket = io("https://cityhelp-backend-pngm.onrender.com", {
+      path: "/socket.io",
+      transports: ["websocket"],
       withCredentials: true,
       autoConnect: true,
     });
   }
   return socket;
 };
-
-
-
