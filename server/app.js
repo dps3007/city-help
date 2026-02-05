@@ -19,7 +19,7 @@ import locationRoutes from "./routes/location.routes.js";
 import helmet from "helmet";
 
 const app = express();
-
+app.set("trust proxy", 1);
 // Enable CORS
 app.use(cors({
   origin: allowedOrigins,
