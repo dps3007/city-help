@@ -5,20 +5,20 @@ const mailGenerator = new Mailgen({
   theme: "default",
   product: {
     name: "CityHelp",
-    link: process.env.CLIENT_URL || "https://city-help-ecru.vercel.app",
+    link: process.env.CLIENT_URL,
   },
 });
 
 export const sendEmail = async ({ email, subject, mailgenContent }) => {
-  try {
-    const html = mailGenerator.generate(mailgenContent);
+  const html = mailGenerator.generate(mailgenContent);
 
+  try {
     await axios.post(
       "https://api.brevo.com/v3/smtp/email",
       {
         sender: {
-          name: "CityHelp",
           email: process.env.EMAIL_FROM,
+          name: "CityHelp",
         },
         to: [{ email }],
         subject,
@@ -29,7 +29,6 @@ export const sendEmail = async ({ email, subject, mailgenContent }) => {
           "api-key": process.env.BREVO_API_KEY,
           "Content-Type": "application/json",
         },
-        timeout: 10000,
       }
     );
 
