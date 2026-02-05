@@ -6,7 +6,7 @@ const transporter = nodemailer.createTransport({
   
   host: process.env.EMAIL_HOST,
   port: process.env.EMAIL_PORT,
-  secure: true,
+  secure: Number(process.env.EMAIL_PORT) === 465,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -18,23 +18,31 @@ const mailGenerator = new Mailgen({
   theme: "default",
   product: {
     name: "CityHelp",
-    link: process.env.FRONTEND_URL || "https://cityhelp.gov.in",  
+    link: process.env.CLIENT_URL || "http://localhost:8000",  
   },
 });
 
 // Send email function
 export const sendEmail = async ({ email, subject, mailgenContent }) => {
-  const html = mailGenerator.generate(mailgenContent);
-  const text = mailGenerator.generatePlaintext(mailgenContent);
+  try {
+    const html = mailGenerator.generate(mailgenContent);
+    const text = mailGenerator.generatePlaintext(mailgenContent);
 
-  await transporter.sendMail({
-    from: process.env.EMAIL_FROM,
-    to: email,
-    subject,
-    html,
-    text,
-  });
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject,
+      html,
+      text,
+    });
+
+    console.log("📧 Email sent to:", email);
+  } catch (err) {
+    console.error("❌ EMAIL SEND FAILED:", err.message);
+    throw err; // optional but good
+  }
 };
+
 
 // Generate password reset email content
 export const passwordResetMailgenContent = (username, link) => ({

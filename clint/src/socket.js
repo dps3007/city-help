@@ -4,7 +4,7 @@ let socket;
 
 export const getSocket = () => {
   if (!socket) {
-    socket = io("http://localhost:8000", {
+    socket = io("https://cityhelp-backend-pngm.onrender.com/api/v1", {
       withCredentials: true,
       autoConnect: true,
     });
@@ -14,4 +14,3 @@ export const getSocket = () => {
 
 
 
-"http://localhost:8000"
