@@ -192,6 +192,17 @@ export const createComplaint = asyncHandler(async (req, res) => {
     }
   }
 
+    await sendNotification({
+    userId: citizen._id,
+    name: citizen.name,
+    title: "Complaint Submitted",
+    message: `Your complaint has been Submitted`,
+    type: "STATUS",
+    event: "COMPLAINT_SUBMITTED",
+    email: citizen.email,
+    complaintId: complaint._id,
+  });
+
   await redis.del("dashboard:*");
   await redis.del("feed:*");
 
