@@ -4,7 +4,7 @@ let socket;
 
 export const getSocket = () => {
   if (!socket) {
-    socket = io("https://cityhelp-backend-pngm.onrender.com", {
+    socket = io("https://cityhelp-backend-pngm.onrender.com" || "http://localhost:5173", {
       path: "/socket.io",
       transports: ["websocket"],
       withCredentials: true,

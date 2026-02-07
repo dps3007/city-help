@@ -234,6 +234,7 @@ function ManageComplaints() {
               <th className="px-4 py-3 text-left">Category</th>
               <th className="px-4 py-3 text-left">Status</th>
               <th className="px-4 py-3 text-left">Upvotes</th>
+              <th className="px-4 py-3 text-left">Created By</th>
               <th className="px-4 py-3 text-left">Assigned</th>
               <th className="px-4 py-3 text-left">Created</th>
               <th className="px-4 py-3 text-left">Resolved</th>
@@ -280,6 +281,8 @@ function ManageComplaints() {
                 </td>
 
                 <td className="px-4 py-3">{c.upvoteCount}</td>
+
+                <td className="px-4 py-3">{c.citizen?.name}</td>
 
                 <td className="px-4 py-3">
                   {c.assignedTo?.name || "Unassigned"}
