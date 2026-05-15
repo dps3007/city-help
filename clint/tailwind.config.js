@@ -32,7 +32,7 @@ export default {
           900: "#164e63",
           950: "#0c2d3a",
         },
-        // Neutrals
+        // Semantic colors
         background: "#ffffff",
         foreground: "#0f172a",
         card: "#f8fafc",
