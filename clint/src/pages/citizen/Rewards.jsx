@@ -4,6 +4,10 @@ import RewardHistory from "./RewardHistory";
 import { Link } from "react-router-dom";
 import { getGlobalLeaderboard } from "../../services/leaderboard.service";
 import { useAuth } from "../../context/AuthContext";
+import Card from "../../components/common/Card";
+import StatsCard from "../../components/common/StatsCard";
+import Skeleton from "../../components/common/Skeleton";
+import { Star, Trophy, Award, TrendingUp, Zap, Target } from "lucide-react";
 
 function Rewards() {
   const [points, setPoints] = useState(0);
@@ -54,85 +58,99 @@ function Rewards() {
     : 100;
 
   if (loading) {
-    return <p className="text-gray-600">Loading rewards...</p>;
+    return (
+      <div className="space-y-6 p-6">
+        <Skeleton count={4} className="h-32" />
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-5xl space-y-8">
+    <div className="space-y-8 p-6 max-w-6xl mx-auto">
 
-      {/* HEADER */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-800">
-          Rewards & Points
-        </h1>
-        <p className="text-gray-500 mt-1">
-          Track your community contributions and achievements
-        </p>
+      {/* Header */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold text-foreground">Rewards & Achievements</h1>
+        <p className="text-muted-foreground">Track your community contributions and earn badges</p>
       </div>
 
-      {/* TOTAL POINTS CARD */}
-      <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-white shadow-lg flex flex-col sm:flex-row justify-between gap-6">
-        <div>
-          <p className="text-sm opacity-90">Total Points</p>
-          <h2 className="text-5xl font-extrabold mt-1">{points}</h2>
-          <p className="text-sm mt-2 opacity-90">
-            Community contribution score
-          </p>
-        </div>
-
-        <div className="sm:text-right">
-          <p className="text-sm opacity-90">Your Rank</p>
-          <p className="text-3xl font-bold mt-1">
-            {rank !== null ? `#${rank}` : "—"}
-          </p>
-
-          <Link
-            to="/leaderboard"
-            className="inline-block mt-3 text-sm font-medium underline hover:opacity-100 opacity-90"
-          >
-            View Leaderboard →
-          </Link>
-        </div>
-      </div>
-
-      {/* NEXT MILESTONE */}
-      {nextMilestone && (
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="font-semibold text-gray-800">
-              Next Milestone
-            </h3>
-            <span className="text-sm text-gray-500">
-              {points} / {nextMilestone.points} pts
-            </span>
+      {/* Main Points & Rank Card */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="md:col-span-2 p-8 bg-gradient-to-br from-primary-600 to-accent-600 text-white">
+          <div className="space-y-2 mb-6">
+            <p className="text-sm font-medium opacity-90">Total Points</p>
+            <h2 className="text-5xl font-bold">{points}</h2>
+            <p className="text-sm opacity-80">Community contribution score</p>
           </div>
 
-          <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-
-          <div className="mt-4 flex items-center gap-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="text-3xl">{nextMilestone.badge}</div>
+          <div className="flex items-center gap-4 bg-white bg-opacity-10 rounded-lg px-4 py-3 w-fit">
+            <Zap className="h-5 w-5" />
             <div>
-              <p className="font-semibold text-blue-700">
-                {nextMilestone.level}
-              </p>
-              <p className="text-sm text-blue-600">
-                {nextMilestone.description}
-              </p>
+              <p className="text-xs opacity-80">Points earned this month</p>
+              <p className="font-bold">{Math.floor(points * 0.3)}</p>
             </div>
           </div>
-        </div>
+        </Card>
+
+        <Card className="p-6 flex flex-col justify-between">
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Global Rank</p>
+            <p className="text-4xl font-bold text-primary-600">
+              {rank !== null ? `#${rank}` : "—"}
+            </p>
+          </div>
+          <Link
+            to="/leaderboard"
+            className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-lg bg-primary-100 text-primary-700 hover:bg-primary-200 transition-colors text-sm font-medium"
+          >
+            <TrendingUp size={16} />
+            View Leaderboard
+          </Link>
+        </Card>
+      </div>
+
+      {/* Next Milestone Progress */}
+      {nextMilestone && (
+        <Card className="p-6 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Target className="h-5 w-5 text-primary-600" />
+            <h3 className="text-lg font-bold text-foreground">Next Milestone</h3>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <p className="text-sm font-medium text-foreground">
+                {nextMilestone.level}
+              </p>
+              <p className="text-sm font-semibold text-primary-600">
+                {points} / {nextMilestone.points} pts
+              </p>
+            </div>
+
+            <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-primary-500 to-accent-500 transition-all duration-500 rounded-full"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+
+            <div className="flex items-center gap-4 bg-primary-50 border border-primary-200 rounded-lg p-4 mt-4">
+              <div className="text-4xl">{nextMilestone.badge}</div>
+              <div>
+                <p className="font-bold text-primary-700">{nextMilestone.level}</p>
+                <p className="text-sm text-primary-600">{nextMilestone.description}</p>
+              </div>
+            </div>
+          </div>
+        </Card>
       )}
 
-      {/* ACHIEVEMENTS */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h3 className="font-semibold text-gray-800 mb-4">
-          Achievements
-        </h3>
+      {/* Achievements & Badges */}
+      <Card className="p-6 space-y-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Award className="h-5 w-5 text-primary-600" />
+          <h3 className="text-lg font-bold text-foreground">Achievements</h3>
+        </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {MILESTONES.map((m, idx) => {
@@ -140,45 +158,69 @@ function Rewards() {
             return (
               <div
                 key={idx}
-                className={`rounded-xl p-4 text-center transition ${
+                className={`rounded-xl p-4 text-center transition-all ${
                   achieved
-                    ? "bg-amber-50 border border-amber-300 shadow-sm"
-                    : "bg-gray-50 border border-gray-200 opacity-60"
+                    ? "bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 shadow-md scale-105"
+                    : "bg-muted border-2 border-border opacity-50"
                 }`}
               >
-                <div className="text-4xl">{m.badge}</div>
-                <p className="font-semibold mt-2">{m.level}</p>
-                <p className="text-xs text-gray-600">
-                  {m.points} pts
+                <div className="text-5xl mb-2">{m.badge}</div>
+                <p className={`font-bold text-sm ${achieved ? "text-foreground" : "text-muted-foreground"}`}>
+                  {m.level}
                 </p>
+                <p className="text-xs text-muted-foreground mt-1">{m.points} pts</p>
                 {achieved && (
-                  <p className="text-xs text-green-600 mt-2 font-semibold">
-                    ✓ Achieved
-                  </p>
+                  <div className="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
+                    <Star size={12} className="fill-green-700" />
+                    Unlocked
+                  </div>
                 )}
               </div>
             );
           })}
         </div>
-      </div>
+      </Card>
 
-      {/* REWARD HISTORY */}
+      {/* Reward History */}
       <RewardHistory history={rewards} />
 
-      {/* HOW IT WORKS */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="font-semibold text-gray-800 mb-3">
-          How It Works
-        </h3>
-        <ul className="space-y-2 text-sm text-gray-700">
-          <li>✓ Complaint verified: <b>+3 points</b></li>
-          <li>✓ Complaint resolved: <b>+4 points</b></li>
-          <li>✓ Feedback submitted: <b>+3 points</b></li>
-          <li className="font-semibold text-blue-700">
-            Total per resolved complaint: 10 points
-          </li>
-        </ul>
-      </div>
+      {/* How It Works */}
+      <Card className="p-6 bg-gradient-to-br from-primary-50 to-accent-50 border-2 border-primary-200">
+        <div className="flex items-center gap-2 mb-4">
+          <Zap className="h-5 w-5 text-primary-600" />
+          <h3 className="text-lg font-bold text-foreground">How Points Work</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <div className="flex gap-3">
+            <span className="text-2xl">✓</span>
+            <div>
+              <p className="font-semibold text-foreground">Complaint Verified</p>
+              <p className="text-sm text-muted-foreground">+3 points</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <span className="text-2xl">✓</span>
+            <div>
+              <p className="font-semibold text-foreground">Complaint Resolved</p>
+              <p className="text-sm text-muted-foreground">+4 points</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <span className="text-2xl">✓</span>
+            <div>
+              <p className="font-semibold text-foreground">Feedback Submitted</p>
+              <p className="text-sm text-muted-foreground">+3 points</p>
+            </div>
+          </div>
+          <div className="flex gap-3 sm:col-span-2 p-4 rounded-lg bg-white border-2 border-primary-200">
+            <Trophy className="h-6 w-6 text-primary-600 flex-shrink-0" />
+            <div>
+              <p className="font-bold text-primary-700">Total per Resolved Complaint</p>
+              <p className="text-2xl font-bold text-primary-600">10 Points</p>
+            </div>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }

@@ -10,8 +10,11 @@ import { useAuth } from "../../context/AuthContext";
 import StatusStepper from "../../components/complaints/StatusStepper";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
+import Card from "../../components/common/Card";
+import Alert from "../../components/common/Alert";
 import FeedbackModal from "../../components/feedback/FeedbackModal";
 import ComplaintMap from "../../components/common/ComplaintMap";
+import { ArrowLeft, MapPin, Calendar, Users, Star } from "lucide-react";
 
 function ComplaintDetail() {
   const { id } = useParams();
@@ -85,17 +88,28 @@ function ComplaintDetail() {
     }
   };
 
-  if (loading) return <p className="text-gray-600">Loading complaint…</p>;
+  if (loading) return (
+    <div className="space-y-6 p-6">
+      <div className="animate-pulse space-y-6">
+        <div className="h-10 bg-muted rounded-lg w-24" />
+        <div className="h-32 bg-muted rounded-lg" />
+      </div>
+    </div>
+  );
 
   if (error)
     return (
-      <div className="p-4 bg-red-50 text-red-600 rounded">
-        {error}
+      <div className="p-6">
+        <Alert type="error" title="Error Loading Complaint" message={error} />
       </div>
     );
 
   if (!complaint)
-    return <p className="text-gray-600">Complaint not found</p>;
+    return (
+      <div className="p-6">
+        <Alert type="info" title="Not Found" message="Complaint not found" />
+      </div>
+    );
 
   const resolvedOrClosed =
     complaint.status === "RESOLVED" ||
@@ -124,97 +138,89 @@ function ComplaintDetail() {
   /* ================= UI ================= */
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 max-w-5xl mx-auto p-6">
 
-      {/* HEADER */}
-      <div className="bg-white rounded-xl shadow p-6">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="
-            inline-flex items-center gap-2
-            px-4 py-2
-            rounded-lg
-            bg-blue-600 text-white
-            text-sm font-medium
-            hover:bg-blue-700
-            transition
-            shadow-sm
-          "
-        >
-          <span className="text-lg leading-none">←</span>
-          Back
-        </button>
+      {/* Back Button */}
+      <Button
+        onClick={() => navigate(-1)}
+        variant="ghost"
+        size="sm"
+        className="text-primary-600 hover:bg-primary-100 inline-flex"
+      >
+        <ArrowLeft size={16} />
+        Back
+      </Button>
 
-
-        <div className="flex justify-between items-start">
+      {/* Header Card */}
+      <Card className="p-6 bg-gradient-to-r from-primary-50 to-accent-50">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">
+            <h1 className="text-3xl font-bold text-foreground">
               {complaint.category}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-muted-foreground mt-2 font-mono text-sm">
               ID: {complaint._id}
             </p>
           </div>
           <Badge status={complaint.status} />
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 text-sm">
-          <Detail label="Category" value={complaint.category} />
-          <Detail
-            label="Created"
-            value={new Date(complaint.createdAt).toLocaleDateString("en-GB")}
-          />
-          <Detail label="Priority" value="Normal" />
-          <Detail
-            label="Upvotes"
-            value={complaint.upvoteCount}
-          />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <DetailItem icon={Calendar} label="Created" value={new Date(complaint.createdAt).toLocaleDateString("en-GB")} />
+          <DetailItem label="Category" value={complaint.category} />
+          <DetailItem label="Priority" value="Normal" />
+          <DetailItem label="Upvotes" value={complaint.upvoteCount} />
         </div>
-      </div>
+      </Card>
 
-      {/* DESCRIPTION */}
-      <div className="bg-white rounded-xl shadow p-6">
-        <h2 className="text-lg font-semibold mb-3">Description</h2>
-        <p className="text-gray-700">{complaint.description}</p>
+      {/* Description */}
+      <Card className="p-6 space-y-4">
+        <h2 className="text-lg font-bold text-foreground">Description</h2>
+        <p className="text-foreground leading-relaxed">{complaint.description}</p>
 
         {complaint.attachments?.length > 0 && (
-          <img
-            src={complaint.attachments[0].url}
-            alt="Complaint"
-            className="mt-4 max-w-md rounded-lg border"
-          />
+          <div className="mt-4">
+            <p className="text-sm font-medium text-muted-foreground mb-2">Attachments</p>
+            <img
+              src={complaint.attachments[0].url}
+              alt="Complaint"
+              className="max-w-sm h-auto rounded-lg border-2 border-border shadow-md"
+            />
+          </div>
         )}
-        
-      </div>
+      </Card>
 
-      {/* LOCATION */}
+      {/* Location */}
       {complaint.location && (
-        <div className="bg-white rounded-xl shadow p-6">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-semibold">Location</h2>
+        <Card className="p-6 space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary-600" />
+              <h2 className="text-lg font-bold text-foreground">Location</h2>
+            </div>
             {hasGeo && (
               <Button
                 onClick={() => {
                   setFocusMap(false);
                   setTimeout(() => setFocusMap(true), 100);
                 }}
-                className="bg-green-600 hover:bg-green-700 text-sm"
+                variant="accent"
+                size="sm"
               >
-                📍 Go to Location
+                Navigate Location
               </Button>
             )}            
           </div>
 
-          <p className="text-gray-700 mb-4">
+          <p className="text-foreground font-medium">
             {complaint.location.localAddress && (
-              <>{complaint.location.localAddress}, </>
+              <>{complaint.location.localAddress}<br /></>
             )}
-            {complaint.location.city}, {complaint.location.state}
+            {complaint.location.city}, {complaint.location.state} - {complaint.location.pincode}
           </p>
 
           {hasGeo && (
-            <div className="rounded-lg overflow-hidden border">
+            <div className="rounded-lg overflow-hidden border-2 border-border h-80">
               <ComplaintMap
                 lat={lat}
                 lng={lng}
@@ -222,151 +228,137 @@ function ComplaintDetail() {
               />
             </div>
           )}
-        </div>
+        </Card>
       )}
 
-      {/* MUNICIPAL */}
+      {/* Municipal Authority */}
       {complaint.municipalId && (
-        <div className="bg-white rounded-xl shadow p-6">
-          <h2 className="text-lg font-semibold mb-2">
+        <Card className="p-6 space-y-4">
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary-600" />
             Municipal Authority
           </h2>
 
-          <div className="grid sm:grid-cols-3 gap-4 text-sm">
-            <Detail
-              label="Municipal Name"
-              value={complaint.municipalId.name}
-            />
-            <Detail
-              label="Code"
-              value={complaint.municipalId.code}
-            />
-            <Detail
+          <div className="grid sm:grid-cols-3 gap-4">
+            <DetailItem label="Municipal" value={complaint.municipalId.name} />
+            <DetailItem label="Code" value={complaint.municipalId.code} />
+            <DetailItem
               label="Jurisdiction"
               value={`${complaint.municipalId.location.district}, ${complaint.municipalId.location.state}`}
             />
           </div>
-        </div>
+        </Card>
       )}
 
-      {/* PROGRESS */}
-      <div className="bg-white rounded-xl shadow p-6">
-        <h2 className="text-lg font-semibold mb-4">Progress</h2>
+      {/* Progress */}
+      <Card className="p-6 space-y-4">
+        <h2 className="text-lg font-bold text-foreground">Resolution Progress</h2>
         <StatusStepper currentStatus={complaint.status} />
-      </div>
+      </Card>
 
-      {/* ASSIGNED */}
+      {/* Assigned To */}
       {complaint.assignedTo && (
-        <div className="bg-white rounded-xl shadow p-6 grid sm:grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm text-gray-500">Assigned To</p>
-            <p className="font-semibold">{complaint.assignedTo.name}</p>
-            <p className="text-sm text-gray-500">
-              {complaint.assignedTo.email}
-            </p>
-          </div>
-
-          {complaint.verifiedBy && (
+        <Card className="p-6">
+          <div className="grid sm:grid-cols-2 gap-6">
             <div>
-              <p className="text-sm text-gray-500">Assigned By</p>
-              <p className="font-semibold">{complaint.verifiedBy.name}</p>
-              <p className="text-sm text-gray-500">
-                {complaint.verifiedBy.email}
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Assigned To</p>
+              <p className="text-lg font-bold text-foreground">{complaint.assignedTo.name}</p>
+              <p className="text-sm text-muted-foreground font-mono mt-1">
+                {complaint.assignedTo.email}
               </p>
             </div>
-          )}
-        </div>
+
+            {complaint.verifiedBy && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Verified By</p>
+                <p className="text-lg font-bold text-foreground">{complaint.verifiedBy.name}</p>
+                <p className="text-sm text-muted-foreground font-mono mt-1">
+                  {complaint.verifiedBy.email}
+                </p>
+              </div>
+            )}
+          </div>
+        </Card>
       )}
 
-      {/* FEEDBACK - NEW: Multiple feedbacks display */}
+      {/* Feedback Section */}
       {resolvedOrClosed && (
-        <div className="bg-white rounded-xl shadow p-6 space-y-4">
-          <h2 className="text-lg font-semibold">Feedback</h2>
+        <Card className="p-6 space-y-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Star className="h-5 w-5 text-primary-600" />
+            <h2 className="text-lg font-bold text-foreground">Customer Feedback</h2>
+          </div>
 
           {/* Display all feedbacks */}
           {feedbacks.length > 0 ? (
-            <div className="space-y-4 mb-4">
+            <div className="space-y-4">
               {feedbacks.map((feedback) => (
-                <div
-                  key={feedback._id}
-                  className="border-b pb-4 last:border-b-0 last:pb-0"
-                >
-                  <div className="flex justify-between items-start mb-2">
+                <div key={feedback._id} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
+                  <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-800">
-                        {feedback.user.name}
-                      </span>
-                      {/* Owner badge */}
-                      {(feedback.user._id === complaint.citizen?._id || 
-                        feedback.user._id === complaint.citizen) && (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                      <p className="font-semibold text-foreground">{feedback.user.name}</p>
+                      {(feedback.user._id === complaint.citizen?._id || feedback.user._id === complaint.citizen) && (
+                        <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full font-medium">
                           Owner
                         </span>
                       )}
-                      {/* Supporter badge */}
                       {complaint.supporters?.some(s => 
                         (s._id === feedback.user._id || s === feedback.user._id) && 
-                        feedback.user._id !== complaint.citizen?._id &&
+                        feedback.user._id !== complaint.citizen?._id && 
                         feedback.user._id !== complaint.citizen
                       ) && (
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
                           Supporter
                         </span>
                       )}
                     </div>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-xs text-muted-foreground">
                       {new Date(feedback.createdAt).toLocaleDateString("en-GB")}
                     </span>
                   </div>
 
                   {/* Star rating */}
-                  <div className="flex gap-1 text-yellow-500 mb-2">
-                    {Array.from({ length: feedback.rating }).map((_, i) => (
-                      <span key={i}>★</span>
-                    ))}
-                    {Array.from({ length: 5 - feedback.rating }).map((_, i) => (
-                      <span key={i} className="text-gray-300">
-                        ★
-                      </span>
+                  <div className="flex gap-0.5 mb-2">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        size={16}
+                        className={i < feedback.rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}
+                      />
                     ))}
                   </div>
 
                   {/* Comment */}
-                  {feedback.comment && (
-                    <p className="text-gray-700 text-sm">{feedback.comment}</p>
-                  )}
+                  {feedback.comment && <p className="text-foreground text-sm leading-relaxed">{feedback.comment}</p>}
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500 mb-4">
-              No feedback submitted yet.
-            </p>
+            <p className="text-sm text-muted-foreground py-4">No feedback submitted yet</p>
           )}
 
-          {/* Feedback button or message */}
-          {canGiveFeedback ? (
+          {/* Feedback CTA */}
+          {canGiveFeedback && (
             <Button
               onClick={() => setShowFeedback(true)}
-              className="bg-blue-600 hover:bg-blue-700 w-full"
+              fullWidth
+              variant="primary"
+              size="md"
+              className="mt-4"
             >
               Submit Your Feedback
             </Button>
-          ) : userHasGivenFeedback ? (
-            <p className="text-sm text-green-600">
-            </p>
-          ) : !resolvedOrClosed ? (
-            <p className="text-sm text-gray-500">
-              Feedback will be available once the complaint is resolved or closed.
-            </p>
-          ) : !isOwnerOrSupporter ? (
-            <p className="text-sm text-gray-500">
-            </p>
-          ) : null}
-        </div>
+          )}
+          {userHasGivenFeedback && (
+            <Alert type="success" message="Thank you for your feedback!" dismissible={false} />
+          )}
+          {!resolvedOrClosed && (
+            <Alert type="info" message="Feedback will be available once the complaint is resolved." dismissible={false} />
+          )}
+        </Card>
       )}
 
-      {/* FEEDBACK MODAL (FIXED Z-INDEX) */}
+      {/* Feedback Modal */}
       {showFeedback && (
         <FeedbackModal
           onClose={() => setShowFeedback(false)}
@@ -377,14 +369,15 @@ function ComplaintDetail() {
   );
 }
 
-/* ---------- Small Component ---------- */
-function Detail({ label, value }) {
+/* ---------- Components ---------- */
+function DetailItem({ icon: Icon, label, value }) {
   return (
     <div>
-      <p className="text-gray-500 text-sm">{label}</p>
-      <p className="font-semibold text-gray-800">
-        {value || "—"}
-      </p>
+      <div className="flex items-center gap-1 mb-1">
+        {Icon && <Icon size={16} className="text-muted-foreground" />}
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
+      </div>
+      <p className="text-sm font-semibold text-foreground">{value || "—"}</p>
     </div>
   );
 }

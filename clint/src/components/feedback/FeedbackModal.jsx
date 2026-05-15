@@ -1,63 +1,99 @@
 import { useState } from "react";
+import { Star, X } from "lucide-react";
+import Button from "../common/Button";
+import Modal from "../common/Modal";
 
 function FeedbackModal({ onClose, onSubmit }) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      await onSubmit({ rating, comment });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-      <div className="bg-white rounded-xl p-6 w-[400px]">
-        <h2 className="text-xl font-semibold text-center mb-2">
-          Your Opinion Matters!
-        </h2>
-
-        {/* ⭐ STARS */}
-        <div className="flex justify-center gap-2 mt-4">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <span
-              key={star}
-              className={`text-4xl cursor-pointer ${
-                (hover || rating) >= star
-                  ? "text-yellow-400"
-                  : "text-gray-300"
-              }`}
-              onClick={() => setRating(star)}
-              onMouseEnter={() => setHover(star)}
-              onMouseLeave={() => setHover(0)}
-            >
-              ★
-            </span>
-          ))}
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="How satisfied are you?"
+      size="md"
+    >
+      <div className="space-y-6">
+        {/* Rating */}
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-muted-foreground">
+            Rate your experience
+          </p>
+          <div className="flex justify-center gap-3">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                onMouseEnter={() => setHover(star)}
+                onMouseLeave={() => setHover(0)}
+                onClick={() => setRating(star)}
+                className="transition-transform hover:scale-110 focus:outline-none"
+              >
+                <Star
+                  size={32}
+                  className={`${
+                    (hover || rating) >= star
+                      ? "fill-amber-400 text-amber-400"
+                      : "text-muted-foreground"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+          {rating > 0 && (
+            <p className="text-center text-sm font-medium text-primary-600">
+              {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][rating]}
+            </p>
+          )}
         </div>
 
-        {/* COMMENT */}
-        <textarea
-          className="w-full border rounded p-2 mt-4"
-          placeholder="Add comments"
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-        />
+        {/* Comment */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-foreground">
+            Additional comments (optional)
+          </label>
+          <textarea
+            placeholder="Share your feedback..."
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            className="w-full px-4 py-3 rounded-lg border-2 border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+            rows={4}
+          />
+        </div>
 
-        {/* BUTTONS */}
-        <div className="flex gap-3 mt-4">
-          <button
-            className="flex-1 bg-teal-500 text-white py-2 rounded disabled:opacity-50"
-            disabled={rating === 0}
-            onClick={() => onSubmit({ rating, comment })}
+        {/* Actions */}
+        <div className="flex gap-3">
+          <Button
+            onClick={handleSubmit}
+            disabled={rating === 0 || loading}
+            loading={loading}
+            fullWidth
+            variant="primary"
           >
-            DONE
-          </button>
-
-          <button
-            className="flex-1 bg-gray-300 py-2 rounded"
+            Submit Feedback
+          </Button>
+          <Button
             onClick={onClose}
+            disabled={loading}
+            fullWidth
+            variant="outline"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

@@ -2,6 +2,12 @@ import { useEffect, useState, useMemo } from "react";
 import dayjs from "dayjs";
 import { getMyComplaints } from "../../services/complaint.service";
 import { Link } from "react-router-dom";
+import Card from "../../components/common/Card";
+import Input from "../../components/common/Input";
+import Badge from "../../components/common/Badge";
+import Button from "../../components/common/Button";
+import Skeleton from "../../components/common/Skeleton";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 const PAGE_SIZE = 8;
 
@@ -55,157 +61,142 @@ function MyComplaints() {
   }, [search]);
 
   if (loading) {
-    return <p className="text-gray-600">Loading complaints...</p>;
+    return (
+      <div className="space-y-6 p-6">
+        <Skeleton count={5} className="h-12" />
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6 bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 rounded-xl">
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">My Complaints</h1>
+          <p className="text-muted-foreground mt-1">Track and manage all your complaints</p>
+        </div>
 
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-800">
-          Complaints Details
-        </h2>
-
-        <input
-          type="text"
-          placeholder="Search by ID / Category / Status"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border px-3 py-2 rounded-lg text-sm w-72"
-        />
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <Input
+              type="text"
+              placeholder="Search by ID, Category, or Status"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              icon={Search}
+            />
+          </div>
+          <div className="text-sm text-muted-foreground py-2 px-3 bg-muted rounded-lg">
+            {filteredComplaints.length} complaint{filteredComplaints.length !== 1 ? 's' : ''}
+          </div>
+        </div>
       </div>
 
-      {/* TABLE */}
-      <div className="bg-white/90 backdrop-blur rounded-xl shadow-md overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-            <tr>
-              <th className="px-4 py-3 text-left">ID</th>
-              <th className="px-4 py-3 text-left">Category</th>
-              <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-left">Upvotes</th>
-              <th className="px-4 py-3 text-left">Assigned To</th>
-              <th className="px-4 py-3 text-left">Created</th>
-              <th className="px-4 py-3 text-left">Resolved On</th>
-              <th className="px-4 py-3 text-left">View</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {paginatedComplaints.length === 0 && (
+      {/* Table Card */}
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted border-b border-border">
               <tr>
-                <td
-                  colSpan="8"
-                  className="px-6 py-6 text-center text-gray-500"
-                >
-                  No complaints found
-                </td>
+                <th className="px-6 py-3 text-left font-semibold text-foreground">ID</th>
+                <th className="px-6 py-3 text-left font-semibold text-foreground">Category</th>
+                <th className="px-6 py-3 text-left font-semibold text-foreground">Status</th>
+                <th className="px-6 py-3 text-center font-semibold text-foreground">Upvotes</th>
+                <th className="px-6 py-3 text-left font-semibold text-foreground">Assigned To</th>
+                <th className="px-6 py-3 text-left font-semibold text-foreground">Created</th>
+                <th className="px-6 py-3 text-left font-semibold text-foreground">Resolved</th>
+                <th className="px-6 py-3 text-center font-semibold text-foreground">Action</th>
               </tr>
-            )}
+            </thead>
 
-            {paginatedComplaints.map((c) => (
-              <tr
-                key={c._id}
-                className="border-t hover:bg-gray-50 transition"
-              >
-                <td className="px-4 py-3 font-medium">
-                  #{c._id.slice(-6)}
-                </td>
+            <tbody>
+              {paginatedComplaints.length === 0 && (
+                <tr>
+                  <td colSpan="8" className="px-6 py-8 text-center">
+                    <p className="text-muted-foreground font-medium">No complaints found</p>
+                    <p className="text-xs text-muted-foreground mt-1">Try adjusting your search criteria</p>
+                  </td>
+                </tr>
+              )}
 
-                <td className="px-4 py-3">
-                  {c.category}
-                </td>
+              {paginatedComplaints.map((c) => (
+                <tr key={c._id} className="border-t border-border hover:bg-muted transition-colors">
+                  <td className="px-6 py-4 font-semibold text-foreground">#{c._id.slice(-6).toUpperCase()}</td>
+                  <td className="px-6 py-4 font-medium text-foreground">{c.category}</td>
+                  <td className="px-6 py-4">
+                    <Badge status={c.status} />
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-accent-100 text-accent-700 text-xs font-semibold">
+                      👍 {c.upvoteCount || 0}
+                    </span>
+                  </td>
+                  <td className={`px-6 py-4 font-medium ${!c.assignedTo ? "text-red-600" : "text-foreground"}`}>
+                    {c.assignedTo?.name || "Unassigned"}
+                  </td>
+                  <td className="px-6 py-4 text-muted-foreground text-xs">
+                    {dayjs(c.createdAt).format("DD MMM YYYY")}
+                  </td>
+                  <td className="px-6 py-4 text-muted-foreground text-xs">
+                    {c.resolvedAt ? dayjs(c.resolvedAt).format("DD MMM YYYY") : "—"}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <Link
+                      to={`/complaints/${c._id}`}
+                      className="inline-flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-semibold text-primary-600 hover:bg-primary-50 transition-colors"
+                    >
+                      View
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
-                <td className="px-4 py-3">
-                  <StatusBadge status={c.status} />
-                </td>
-
-                <td className="px-4 py-3">
-                  {c.upvoteCount}
-                </td>
-
-                <td
-                  className={`px-4 py-3 font-medium ${
-                    !c.assignedTo ? "text-red-500" : "text-gray-800"
-                  }`}
-                >
-                  {c.assignedTo?.name || "Unassigned"}
-                </td>
-
-                <td className="px-4 py-3">
-                  {dayjs(c.createdAt).format("DD MMM YYYY")}
-                </td>
-
-                <td className="px-4 py-3">
-                  {c.resolvedAt
-                    ? dayjs(c.resolvedAt).format("DD MMM YYYY")
-                    : "—"}
-                </td>
-
-                <td className="px-4 py-3">
-                  <Link
-                    to={`/complaints/${c._id}`}
-                    className="text-blue-600 font-medium hover:underline"
-                  >
-                    View
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* PAGINATION */}
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-between items-center">
-          <button
-            disabled={page === 1}
+        <div className="flex justify-center items-center gap-3">
+          <Button
             onClick={() => setPage((p) => p - 1)}
-            className="px-4 py-1 rounded-full bg-white shadow disabled:opacity-50"
+            disabled={page === 1}
+            variant="outline"
+            size="sm"
           >
-            Prev
-          </button>
+            <ChevronLeft size={16} />
+            Previous
+          </Button>
 
-          <span className="text-sm font-medium">
-            Page {page} / {totalPages}
-          </span>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <button
+                key={pageNum}
+                onClick={() => setPage(pageNum)}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                  pageNum === page
+                    ? "bg-primary-600 text-white"
+                    : "border border-border text-foreground hover:bg-muted"
+                }`}
+              >
+                {pageNum}
+              </button>
+            ))}
+          </div>
 
-          <button
-            disabled={page === totalPages}
+          <Button
             onClick={() => setPage((p) => p + 1)}
-            className="px-4 py-1 rounded-full bg-white shadow disabled:opacity-50"
+            disabled={page === totalPages}
+            variant="outline"
+            size="sm"
           >
             Next
-          </button>
+            <ChevronRight size={16} />
+          </Button>
         </div>
       )}
     </div>
   );
-}
-
-/* ===== STATUS BADGE ===== */
-function StatusBadge({ status }) {
-  const colors = {
-    SUBMITTED: "bg-gray-200 text-gray-700",
-    VERIFIED: "bg-blue-100 text-blue-700",
-    ASSIGNED: "bg-yellow-100 text-yellow-700",
-    IN_PROGRESS: "bg-orange-100 text-orange-700",
-    RESOLVED: "bg-green-100 text-green-700",
-    CLOSED: "bg-green-200 text-green-800",
-    REJECTED: "bg-red-100 text-red-700",
-  };
-
-  return (
-    <span
-      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-        colors[status] || "bg-gray-100 text-gray-600"
-      }`}
-    >
-      {status}
-    </span>
-  );
-}
 
 export default MyComplaints;
