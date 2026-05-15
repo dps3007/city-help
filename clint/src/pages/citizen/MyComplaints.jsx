@@ -198,5 +198,6 @@ function MyComplaints() {
       )}
     </div>
   );
+}
 
 export default MyComplaints;
