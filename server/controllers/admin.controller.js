@@ -298,12 +298,32 @@ export const createUser = asyncHandler(async (req, res) => {
 
   await sendEmail({
     email: user.email,
-    subject: "You have been added to CityHelp",
+    subject: `Welcome to CityHelp - ${role} Account Created`,
     mailgenContent: {
       body: {
         name: user.name,
-        intro: `You have been added as a ${role} in CityHelp.`,
-        outro: `Temporary Password: ${tempPassword}`,
+        intro: `Your ${role} account has been successfully created in the CityHelp civic operations platform.`,
+        table: {
+          data: [
+            { key: "Email", value: user.email },
+            { key: "Role", value: role },
+            { key: "Department", value: department || "N/A" },
+            { key: "Account Status", value: "Active" },
+          ],
+        },
+        action: {
+          instructions: "Use your email and the temporary password below to sign in:",
+          button: {
+            color: "#0891b2",
+            text: "Login to CityHelp",
+            link: process.env.CLIENT_URL || "https://cityhelp.example.com",
+          },
+        },
+        outro: [
+          `<strong>Temporary Password:</strong> <code>${tempPassword}</code>`,
+          "Please change your password after your first login for security purposes.",
+          "If you did not expect this email or have questions, please contact the system administrator.",
+        ].join("\n\n"),
       },
     },
   });

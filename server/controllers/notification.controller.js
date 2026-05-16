@@ -14,6 +14,9 @@ export const sendNotification = async ({
   email,
   name,
   complaintId = null,
+  complaintDetails = null,
+  actionUrl = null,
+  actionText = "View Details",
 }) => {
   if (!type || !event) {
     throw new Error("Notification type and event are required");
@@ -30,15 +33,63 @@ export const sendNotification = async ({
 
   if (email) {
     try {
+      const mailContent = {
+        body: {
+          name: name || "CityHelp User",
+          intro: message,
+        },
+      };
+
+      // Add complaint details section if provided
+      if (complaintDetails) {
+        const table = {
+          data: [
+            {
+              key: "Complaint ID",
+              value: complaintDetails.id || complaintId || "N/A",
+            },
+            {
+              key: "Category",
+              value: complaintDetails.category || "N/A",
+            },
+            {
+              key: "Description",
+              value: complaintDetails.description || "N/A",
+            },
+            {
+              key: "Location",
+              value: complaintDetails.location || "N/A",
+            },
+            {
+              key: "Status",
+              value: complaintDetails.status || "N/A",
+            },
+          ],
+        };
+        mailContent.body.table = table;
+      }
+
+      // Add action button
+      if (actionUrl) {
+        mailContent.body.action = {
+          instructions: "Click the button below to take action:",
+          button: {
+            color: "#0891b2",
+            text: actionText,
+            link: actionUrl,
+          },
+        };
+      }
+
+      // Add closing message with next steps
+      mailContent.body.outro =
+        mailContent.body.outro ||
+        "If you have any questions, please contact our support team. Thank you for using CityHelp!";
+
       await sendEmail({
         email,
         subject: title,
-        mailgenContent: {
-          body: {
-            name: name || "CityHelp User",
-            intro: message,
-          },
-        },
+        mailgenContent: mailContent,
       });
     } catch (error) {
       console.warn("Notification email failed:", error.response?.data || error.message);

@@ -205,12 +205,21 @@ export const createComplaint = asyncHandler(async (req, res) => {
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
-    title: "Complaint Submitted",
-    message: `Your complaint has been Submitted`,
+    title: "Complaint Submitted Successfully",
+    message: `Your complaint "${complaint.title}" has been successfully submitted and is now under review.`,
     type: "STATUS",
     event: "COMPLAINT_SUBMITTED",
     email: citizen.email,
     complaintId: complaint._id,
+    complaintDetails: {
+      id: complaint._id.toString(),
+      category: complaint.category,
+      description: complaint.description.substring(0, 100) + "...",
+      location: `${complaint.location?.district}, ${complaint.location?.state}`,
+      status: complaint.status,
+    },
+    actionUrl: `${process.env.CLIENT_URL}/complaints/${complaint._id}`,
+    actionText: "View Complaint",
   });
 
   await invalidateCacheSafely("dashboard:*", "feed:*");
@@ -362,11 +371,20 @@ export const verifyComplaint = asyncHandler(async (req, res) => {
     userId: citizen._id,
     name: citizen.name,
     title: "Complaint Verified",
-    message: `Your complaint has been verified by ${officer.name}.`,
+    message: `Great! Your complaint "${complaint.title}" has been verified by ${officer.name} and is now in progress.`,
     type: "STATUS",
     event: "COMPLAINT_VERIFIED",
     email: citizen.email,
     complaintId: complaint._id,
+    complaintDetails: {
+      id: complaint._id.toString(),
+      category: complaint.category,
+      description: complaint.description.substring(0, 100) + "...",
+      location: `${complaint.location?.district}, ${complaint.location?.state}`,
+      status: "VERIFIED",
+    },
+    actionUrl: `${process.env.CLIENT_URL}/complaints/${complaint._id}`,
+    actionText: "Track Progress",
   });
 
   await invalidateCacheSafely("dashboard:*");
@@ -413,24 +431,42 @@ export const assignComplaint = asyncHandler(async (req, res) => {
   await sendNotification({
     userId: officer._id,
     name: officer.name,
-    title: "New Complaint Assigned",
-    message: "A new complaint has been assigned to you. Please take action.",
+    title: `New Complaint Assigned: ${complaint.title}`,
+    message: `A new complaint "${complaint.title}" has been assigned to you from ${citizen.name}. Please review and take appropriate action.`,
     type: "ASSIGNMENT", 
     event: "COMPLAINT_ASSIGNED",   
     email: officer.email,
     complaintId: complaint._id,
+    complaintDetails: {
+      id: complaint._id.toString(),
+      category: complaint.category,
+      description: complaint.description.substring(0, 100) + "...",
+      location: `${complaint.location?.district}, ${complaint.location?.state}`,
+      status: "ASSIGNED",
+    },
+    actionUrl: `${process.env.CLIENT_URL}/complaints/${complaint._id}`,
+    actionText: "View & Start Work",
   });
 
   // Citizen notification
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
-    title: "Complaint Assigned",
-    message: `Your complaint has been assigned to ${officer.name}.`,
+    title: "Complaint Assigned to Officer",
+    message: `Your complaint "${complaint.title}" has been assigned to ${officer.name}. They will start working on it shortly.`,
     type: "ASSIGNMENT",        
     event: "COMPLAINT_ASSIGNED",     
     email: citizen.email,
     complaintId: complaint._id,
+    complaintDetails: {
+      id: complaint._id.toString(),
+      category: complaint.category,
+      description: complaint.description.substring(0, 100) + "...",
+      location: `${complaint.location?.district}, ${complaint.location?.state}`,
+      status: "ASSIGNED",
+    },
+    actionUrl: `${process.env.CLIENT_URL}/complaints/${complaint._id}`,
+    actionText: "Track Assignment",
   });
 
   await invalidateCacheSafely("dashboard:*");
@@ -474,12 +510,21 @@ export const startWork = asyncHandler(async (req, res) => {
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
-    title: "Work Started",
-    message: `Work has started on your complaint.`,
+    title: "Work Started on Your Complaint",
+    message: `Good news! Work has started on your complaint "${complaint.title}". Our team is actively working to resolve it.`,
     type: "STATUS",
     event: "COMPLAINT_WORK_STARTED",
     email: citizen.email,
     complaintId: complaint._id,
+    complaintDetails: {
+      id: complaint._id.toString(),
+      category: complaint.category,
+      description: complaint.description.substring(0, 100) + "...",
+      location: `${complaint.location?.district}, ${complaint.location?.state}`,
+      status: "IN_PROGRESS",
+    },
+    actionUrl: `${process.env.CLIENT_URL}/complaints/${complaint._id}`,
+    actionText: "Monitor Updates",
   });
 
   await invalidateCacheSafely("dashboard:*");
@@ -530,12 +575,21 @@ export const resolveComplaint = asyncHandler(async (req, res) => {
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
-    title: "Complaint Resolved",
-    message: "Your complaint has been successfully resolved.",
+    title: "Complaint Resolved Successfully",
+    message: `Excellent! Your complaint "${complaint.title}" has been successfully resolved. Thank you for reporting this issue and helping improve our community.`,
     type: "STATUS",       
     event: "COMPLAINT_RESOLVED",   
     email: citizen.email,
     complaintId: complaint._id,
+    complaintDetails: {
+      id: complaint._id.toString(),
+      category: complaint.category,
+      description: complaint.description.substring(0, 100) + "...",
+      location: `${complaint.location?.district}, ${complaint.location?.state}`,
+      status: "RESOLVED",
+    },
+    actionUrl: `${process.env.CLIENT_URL}/complaints/${complaint._id}`,
+    actionText: "View Resolution Details",
   });
 
   await invalidateCacheSafely("dashboard:*");
@@ -577,12 +631,21 @@ export const closeComplaint = asyncHandler(async (req, res) => {
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
-    title: "Complaint Closed",
-    message: "Your complaint has been successfully closed.",
+    title: "Complaint Case Closed",
+    message: `Your complaint "${complaint.title}" case has been officially closed. We appreciate your feedback and cooperation in resolving this matter.`,
     type: "STATUS",
     event: "COMPLAINT_CLOSED",         
     email: citizen.email,
     complaintId: complaint._id,
+    complaintDetails: {
+      id: complaint._id.toString(),
+      category: complaint.category,
+      description: complaint.description.substring(0, 100) + "...",
+      location: `${complaint.location?.district}, ${complaint.location?.state}`,
+      status: "CLOSED",
+    },
+    actionUrl: `${process.env.CLIENT_URL}/complaints/${complaint._id}`,
+    actionText: "View Final Status",
   });
 
   await invalidateCacheSafely("dashboard:*");
