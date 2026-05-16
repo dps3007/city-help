@@ -201,22 +201,23 @@ export const createComplaint = asyncHandler(async (req, res) => {
   }
 
   const citizen = req.user;
+  const complaintTitle = complaint.description.substring(0, 60);
   
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
     title: "Complaint Submitted Successfully",
-    message: `Your complaint "${complaint.title}" has been successfully submitted and is now under review.`,
+    message: `Your complaint "${complaintTitle}" has been successfully submitted and is now under review.`,
     type: "STATUS",
     event: "COMPLAINT_SUBMITTED",
     email: citizen.email,
     complaintId: complaint._id,
     complaintDetails: {
-      id: complaint._id.toString(),
-      category: complaint.category,
-      description: complaint.description.substring(0, 100) + "...",
-      location: `${complaint.location?.district}, ${complaint.location?.state}`,
-      status: complaint.status,
+      id: complaint._id?.toString() || "N/A",
+      category: complaint.category || "N/A",
+      description: (complaint.description || "No description").substring(0, 100) + "...",
+      location: `${complaint.location?.district || "N/A"}, ${complaint.location?.state || "N/A"}`,
+      status: complaint.status || "SUBMITTED",
     },
     actionUrl: `${process.env.CLIENT_URL}/complaints/${complaint._id}`,
     actionText: "View Complaint",
@@ -367,20 +368,21 @@ export const verifyComplaint = asyncHandler(async (req, res) => {
 });
 
   //  Notification
+  const complaintTitle1 = (complaint.description || "Your complaint").substring(0, 60);
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
     title: "Complaint Verified",
-    message: `Great! Your complaint "${complaint.title}" has been verified by ${officer.name} and is now in progress.`,
+    message: `Great! Your complaint "${complaintTitle1}" has been verified by ${officer?.name || "the officer"} and is now in progress.`,
     type: "STATUS",
     event: "COMPLAINT_VERIFIED",
     email: citizen.email,
     complaintId: complaint._id,
     complaintDetails: {
-      id: complaint._id.toString(),
-      category: complaint.category,
-      description: complaint.description.substring(0, 100) + "...",
-      location: `${complaint.location?.district}, ${complaint.location?.state}`,
+      id: complaint._id?.toString() || "N/A",
+      category: complaint.category || "N/A",
+      description: (complaint.description || "No description").substring(0, 100) + "...",
+      location: `${complaint.location?.district || "N/A"}, ${complaint.location?.state || "N/A"}`,
       status: "VERIFIED",
     },
     actionUrl: `${process.env.CLIENT_URL}/complaints/${complaint._id}`,
@@ -428,20 +430,21 @@ export const assignComplaint = asyncHandler(async (req, res) => {
   await complaint.save();
 
   // Officer notification
+  const complaintTitle2 = (complaint.description || "A complaint").substring(0, 60);
   await sendNotification({
     userId: officer._id,
     name: officer.name,
-    title: `New Complaint Assigned: ${complaint.title}`,
-    message: `A new complaint "${complaint.title}" has been assigned to you from ${citizen.name}. Please review and take appropriate action.`,
+    title: `New Complaint Assigned: ${complaintTitle2.substring(0, 40)}`,
+    message: `A new complaint "${complaintTitle2}" has been assigned to you from ${citizen?.name || "a citizen"}. Please review and take appropriate action.`,
     type: "ASSIGNMENT", 
     event: "COMPLAINT_ASSIGNED",   
     email: officer.email,
     complaintId: complaint._id,
     complaintDetails: {
-      id: complaint._id.toString(),
-      category: complaint.category,
-      description: complaint.description.substring(0, 100) + "...",
-      location: `${complaint.location?.district}, ${complaint.location?.state}`,
+      id: complaint._id?.toString() || "N/A",
+      category: complaint.category || "N/A",
+      description: (complaint.description || "No description").substring(0, 100) + "...",
+      location: `${complaint.location?.district || "N/A"}, ${complaint.location?.state || "N/A"}`,
       status: "ASSIGNED",
     },
     actionUrl: `${process.env.CLIENT_URL}/complaints/${complaint._id}`,
@@ -453,16 +456,16 @@ export const assignComplaint = asyncHandler(async (req, res) => {
     userId: citizen._id,
     name: citizen.name,
     title: "Complaint Assigned to Officer",
-    message: `Your complaint "${complaint.title}" has been assigned to ${officer.name}. They will start working on it shortly.`,
+    message: `Your complaint "${complaintTitle2}" has been assigned to ${officer?.name || "an officer"}. They will start working on it shortly.`,
     type: "ASSIGNMENT",        
     event: "COMPLAINT_ASSIGNED",     
     email: citizen.email,
     complaintId: complaint._id,
     complaintDetails: {
-      id: complaint._id.toString(),
-      category: complaint.category,
-      description: complaint.description.substring(0, 100) + "...",
-      location: `${complaint.location?.district}, ${complaint.location?.state}`,
+      id: complaint._id?.toString() || "N/A",
+      category: complaint.category || "N/A",
+      description: (complaint.description || "No description").substring(0, 100) + "...",
+      location: `${complaint.location?.district || "N/A"}, ${complaint.location?.state || "N/A"}`,
       status: "ASSIGNED",
     },
     actionUrl: `${process.env.CLIENT_URL}/complaints/${complaint._id}`,
@@ -507,20 +510,21 @@ export const startWork = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Citizen not found");
   }
 
+  const complaintTitle3 = (complaint.description || "Your complaint").substring(0, 60);
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
     title: "Work Started on Your Complaint",
-    message: `Good news! Work has started on your complaint "${complaint.title}". Our team is actively working to resolve it.`,
+    message: `Good news! Work has started on your complaint "${complaintTitle3}". Our team is actively working to resolve it.`,
     type: "STATUS",
     event: "COMPLAINT_WORK_STARTED",
     email: citizen.email,
     complaintId: complaint._id,
     complaintDetails: {
-      id: complaint._id.toString(),
-      category: complaint.category,
-      description: complaint.description.substring(0, 100) + "...",
-      location: `${complaint.location?.district}, ${complaint.location?.state}`,
+      id: complaint._id?.toString() || "N/A",
+      category: complaint.category || "N/A",
+      description: (complaint.description || "No description").substring(0, 100) + "...",
+      location: `${complaint.location?.district || "N/A"}, ${complaint.location?.state || "N/A"}`,
       status: "IN_PROGRESS",
     },
     actionUrl: `${process.env.CLIENT_URL}/complaints/${complaint._id}`,
@@ -572,20 +576,21 @@ export const resolveComplaint = asyncHandler(async (req, res) => {
 });
 
   // Notification to citizen
+  const complaintTitle4 = (complaint.description || "Your complaint").substring(0, 60);
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
     title: "Complaint Resolved Successfully",
-    message: `Excellent! Your complaint "${complaint.title}" has been successfully resolved. Thank you for reporting this issue and helping improve our community.`,
+    message: `Excellent! Your complaint "${complaintTitle4}" has been successfully resolved. Thank you for reporting this issue and helping improve our community.`,
     type: "STATUS",       
     event: "COMPLAINT_RESOLVED",   
     email: citizen.email,
     complaintId: complaint._id,
     complaintDetails: {
-      id: complaint._id.toString(),
-      category: complaint.category,
-      description: complaint.description.substring(0, 100) + "...",
-      location: `${complaint.location?.district}, ${complaint.location?.state}`,
+      id: complaint._id?.toString() || "N/A",
+      category: complaint.category || "N/A",
+      description: (complaint.description || "No description").substring(0, 100) + "...",
+      location: `${complaint.location?.district || "N/A"}, ${complaint.location?.state || "N/A"}`,
       status: "RESOLVED",
     },
     actionUrl: `${process.env.CLIENT_URL}/complaints/${complaint._id}`,
@@ -628,20 +633,21 @@ export const closeComplaint = asyncHandler(async (req, res) => {
   }
 
   //  Notification to citizen
+  const complaintTitle5 = (complaint.description || "Your complaint").substring(0, 60);
   await sendNotification({
     userId: citizen._id,
     name: citizen.name,
     title: "Complaint Case Closed",
-    message: `Your complaint "${complaint.title}" case has been officially closed. We appreciate your feedback and cooperation in resolving this matter.`,
+    message: `Your complaint "${complaintTitle5}" case has been officially closed. We appreciate your feedback and cooperation in resolving this matter.`,
     type: "STATUS",
     event: "COMPLAINT_CLOSED",         
     email: citizen.email,
     complaintId: complaint._id,
     complaintDetails: {
-      id: complaint._id.toString(),
-      category: complaint.category,
-      description: complaint.description.substring(0, 100) + "...",
-      location: `${complaint.location?.district}, ${complaint.location?.state}`,
+      id: complaint._id?.toString() || "N/A",
+      category: complaint.category || "N/A",
+      description: (complaint.description || "No description").substring(0, 100) + "...",
+      location: `${complaint.location?.district || "N/A"}, ${complaint.location?.state || "N/A"}`,
       status: "CLOSED",
     },
     actionUrl: `${process.env.CLIENT_URL}/complaints/${complaint._id}`,
