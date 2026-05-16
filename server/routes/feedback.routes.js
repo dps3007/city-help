@@ -11,7 +11,7 @@ const router = Router();
 // Citizen -> submit feedback
 router.post("/", verifyJWT, checkRole("CITIZEN"), createFeedback);
 
-
-router.get("/complaint/:complaintId", verifyJWT, checkRole("CITIZEN"), getComplaintFeedbacks); 
+// Get feedbacks for a complaint (CITIZEN or assigned OFFICER)
+router.get("/complaint/:complaintId", verifyJWT, getComplaintFeedbacks); 
 
 export default router;

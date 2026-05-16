@@ -65,6 +65,34 @@ export const createFeedback = asyncHandler(async (req, res) => {
 // Get all feedbacks for a complaint
 export const getComplaintFeedbacks = asyncHandler(async (req, res) => {
   const { complaintId } = req.params;
+  const user = req.user;
+
+  // Verify the complaint exists
+  const complaint = await Complaint.findById(complaintId);
+  if (!complaint) {
+    throw new ApiError(404, "Complaint not found");
+  }
+
+  // ============= Access Control =============
+  // For CITIZEN role
+  if (user.role === "CITIZEN") {
+    const isOwner = complaint.citizen.equals(user._id);
+    const isSupporter = complaint.supporters.some(
+      (supporter) => supporter._id.equals(user._id)
+    );
+
+    if (!isOwner && !isSupporter) {
+      throw new ApiError(403, "Access denied");
+    }
+  }
+
+  // For OFFICER role
+  if (
+    user.role === "OFFICER" &&
+    !complaint.assignedTo?.equals(user._id)
+  ) {
+    throw new ApiError(403, "Access denied");
+  }
 
   const feedbacks = await Feedback.find({ complaint: complaintId })
     .populate("user", "name email avatar")

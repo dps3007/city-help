@@ -1,11 +1,79 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap");
 @import "tailwindcss";
 
-/* optional base styling */
-html,
-body {
-  height: 100%;
+:root {
+  color-scheme: light;
 }
 
-body {
-  @apply bg-gray-100 dark:bg-gray-950 transition-colors;
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased;
+    font-family: "Manrope", "Segoe UI", sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 28%),
+      radial-gradient(circle at 80% 10%, rgba(34, 211, 238, 0.12), transparent 24%),
+      linear-gradient(180deg, #020617 0%, #0f172a 50%, #020617 100%);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Space Grotesk", "Manrope", sans-serif;
+    letter-spacing: -0.03em;
+  }
+
+  ::selection {
+    background: rgba(34, 211, 238, 0.28);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.28);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  .surface {
+    @apply rounded-3xl border border-white/10 bg-white/5 shadow-[0_30px_80px_rgba(2,6,23,0.45)] backdrop-blur-xl;
+  }
+
+  .surface-soft {
+    @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl;
+  }
+
+  .grid-overlay {
+    background-image:
+      linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
+    background-size: 42px 42px;
+  }
+
+  .soft-ring {
+    @apply ring-1 ring-inset ring-white/10;
+  }
 }

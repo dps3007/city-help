@@ -76,5 +76,5 @@ export const upvoteComplaint = async (id) => {
 /* District Feed (frontend caller) */
 export const getDistrictFeed = async () => {
   const res = await api.get("/complaints/feed");
-  return res.data; // array of complaints
+  return res.data.data || res.data; // Extract array from ApiResponse
 };

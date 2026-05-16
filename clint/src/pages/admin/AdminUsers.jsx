@@ -1,37 +1,48 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ShieldCheck, UserPlus, UsersRound } from "lucide-react";
 import api from "../../services/api";
 import ManageUserModal from "./ManageUserModal";
 import AddAdminModal from "./AddAdminModal";
+import SectionHeader from "../../components/ui/SectionHeader";
+import StatCard from "../../components/ui/StatCard";
+import Card, { CardBody, CardHeader } from "../../components/ui/Card";
+import Badge from "../../components/common/Badge";
+import Button from "../../components/common/Button";
+import EmptyState from "../../components/ui/EmptyState";
+import { TableSkeleton } from "../../components/ui/Skeleton";
+
+const ADMIN_ROLES = [
+  "SUPER_ADMIN",
+  "CENTRAL_ADMIN",
+  "STATE_ADMIN",
+  "DISTRICT_ADMIN",
+  "DEPT_HEAD",
+  "OFFICER",
+];
+
+const ROLE_LABELS = {
+  SUPER_ADMIN: "Super Admin",
+  CENTRAL_ADMIN: "Central Admin",
+  STATE_ADMIN: "State Admin",
+  DISTRICT_ADMIN: "District Admin",
+  DEPT_HEAD: "Department Head",
+  OFFICER: "Officer",
+};
 
 function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [addOpen, setAddOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const ADMIN_ROLES = [
-    "SUPER_ADMIN",
-    "CENTRAL_ADMIN",
-    "STATE_ADMIN",
-    "DISTRICT_ADMIN",
-    "DEPT_HEAD",
-    "OFFICER",
-  ];
-
   const fetchUsers = async () => {
     try {
+      setLoading(true);
       const res = await api.get("/admin/users");
-
-      const adminsOnly = (res.data.data.users || []).filter(
-        (u) => ADMIN_ROLES.includes(u.role)
+      const adminsOnly = (res.data.data.users || []).filter((user) =>
+        ADMIN_ROLES.includes(user.role)
       );
-
       setUsers(adminsOnly);
     } catch (err) {
       console.error("Failed to load admins", err);
@@ -40,122 +51,164 @@ function AdminUsers() {
     }
   };
 
-  const total = users.length;
-  const active = users.filter((u) => u.isActive).length;
-  const disabled = total - active;
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
-  if (loading) return <p className="text-gray-600">Loading admins…</p>;
+  const metrics = useMemo(() => {
+    const active = users.filter((user) => user.isActive).length;
+    const disabled = users.length - active;
+    const departmentUsers = users.filter((user) =>
+      ["DEPT_HEAD", "OFFICER"].includes(user.role)
+    ).length;
+
+    return { total: users.length, active, disabled, departmentUsers };
+  }, [users]);
+
+  const openManageModal = (user) => {
+    setSelectedUser(user);
+    setManageOpen(true);
+  };
+
+  if (loading) return <TableSkeleton rows={6} />;
 
   return (
-    <div className="space-y-6 bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 rounded-lg">
-
-      {/* HEADER */}
-      <div>
-        <h2 className="text-xl font-semibold text-gray-800">
-          Admin Management
-        </h2>
-        <p className="text-sm text-gray-500">
-          Control system administrators and officers
-        </p>
-      </div>
-
-      {/* METRICS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Metric title="Total Admins" value={total} color="indigo" />
-        <Metric title="Active" value={active} color="green" />
-        <Metric title="Disabled" value={disabled} color="red" />
-      </div>
-
-      {/* TABLE CARD */}
-      <div className="bg-white/90 backdrop-blur rounded-xl shadow-md overflow-x-auto">
-        <div className="border-b px-6 py-4 flex justify-between items-center">
-          <h3 className="font-semibold text-gray-800">
-            Admins & Officers
-          </h3>
-
-          <button
+    <div className="space-y-6">
+      <SectionHeader
+        eyebrow="Access control"
+        title="Admin management"
+        description="Provision staff, review operational roles, and keep officer access aligned with city responsibilities."
+        action={
+          <Button
             onClick={() => setAddOpen(true)}
-            className="bg-gradient-to-r from-blue-600 to-purple-600
-                       text-white px-4 py-1.5 rounded-full text-sm
-                       hover:opacity-90 transition"
+            leadingIcon={<UserPlus size={16} />}
           >
-            Add Admin
-          </button>
-        </div>
+            Add admin
+          </Button>
+        }
+      />
 
-        <table className="w-full text-sm">
-          <thead className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-            <tr>
-              <th className="px-6 py-3 text-left">Name</th>
-              <th className="px-6 py-3 text-left">Role</th>
-              <th className="px-6 py-3 text-left">Status</th>
-              <th className="px-6 py-3 text-left">Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {users.map((u) => (
-              <tr
-                key={u._id}
-                className="border-t hover:bg-gray-50 transition"
-              >
-                {/* NAME */}
-                <td className="px-6 py-3">
-                  <div className="font-medium text-gray-800">
-                    {u.name}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {u.email}
-                  </div>
-                </td>
-
-                {/* ROLE */}
-                <td className="px-6 py-3">
-                  <span className="inline-flex rounded-full
-                                   bg-blue-100 px-3 py-1
-                                   text-xs font-semibold text-blue-700">
-                    {u.role.replace("_", " ")}
-                  </span>
-                </td>
-
-                {/* STATUS */}
-                <td className="px-6 py-3">
-                  <span
-                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                      u.isActive
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {u.isActive ? "Active" : "Disabled"}
-                  </span>
-                </td>
-
-                {/* ACTION */}
-                <td className="px-6 py-3">
-                  {u.role !== "SUPER_ADMIN" ? (
-                    <button
-                      onClick={() => {
-                        setSelectedUser(u);
-                        setManageOpen(true);
-                      }}
-                      className="text-blue-600 font-medium hover:underline text-sm"
-                    >
-                      Manage
-                    </button>
-                  ) : (
-                    <span className="text-gray-400 text-xs">
-                      —
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          title="Total staff"
+          value={metrics.total}
+          delta="Admins and officers"
+          icon={<UsersRound size={18} />}
+          tone="blue"
+        />
+        <StatCard
+          title="Active"
+          value={metrics.active}
+          delta="Able to access dashboards"
+          icon={<ShieldCheck size={18} />}
+          tone="emerald"
+        />
+        <StatCard
+          title="Disabled"
+          value={metrics.disabled}
+          delta="Access currently restricted"
+          icon={<ShieldCheck size={18} />}
+          tone="rose"
+        />
+        <StatCard
+          title="Department users"
+          value={metrics.departmentUsers}
+          delta="Heads and field officers"
+          icon={<UsersRound size={18} />}
+          tone="cyan"
+        />
       </div>
 
-      {/* MODALS */}
+      <Card>
+        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-white">Admins and officers</h3>
+            <p className="mt-1 text-sm text-slate-400">
+              Manage role assignments for non-citizen accounts.
+            </p>
+          </div>
+          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-300">
+            {metrics.total} accounts
+          </span>
+        </CardHeader>
+
+        <CardBody className="overflow-x-auto p-0">
+          {users.length === 0 ? (
+            <EmptyState
+              title="No staff accounts found"
+              description="Create the first admin or officer account to begin assigning operational access."
+              icon={<UsersRound size={22} />}
+              action={
+                <Button
+                  onClick={() => setAddOpen(true)}
+                  leadingIcon={<UserPlus size={16} />}
+                >
+                  Add admin
+                </Button>
+              }
+            />
+          ) : (
+            <table className="min-w-full divide-y divide-white/10 text-sm">
+              <thead className="bg-white/5 text-left text-slate-300">
+                <tr>
+                  <th className="px-5 py-4">Name</th>
+                  <th className="px-5 py-4">Role</th>
+                  <th className="px-5 py-4">Department</th>
+                  <th className="px-5 py-4">Location</th>
+                  <th className="px-5 py-4">Status</th>
+                  <th className="px-5 py-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/10">
+                {users.map((user) => (
+                  <tr key={user._id} className="transition hover:bg-white/5">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-400/10 text-sm font-bold text-cyan-100">
+                          {user.name?.[0]?.toUpperCase() || "A"}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-white">{user.name || "Unnamed staff"}</p>
+                          <p className="mt-1 text-xs text-slate-400">{user.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <Badge label={ROLE_LABELS[user.role] || user.role} />
+                    </td>
+                    <td className="px-5 py-4 text-slate-300">
+                      {user.department || "Not assigned"}
+                    </td>
+                    <td className="px-5 py-4 text-slate-300">
+                      {formatLocation(user)}
+                    </td>
+                    <td className="px-5 py-4">
+                      <Badge
+                        label={user.isActive ? "Active" : "Disabled"}
+                        tone={user.isActive ? "RESOLVED" : "default"}
+                      />
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      {user.role === "SUPER_ADMIN" ? (
+                        <span className="text-xs font-medium text-slate-500">Locked</span>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => openManageModal(user)}
+                        >
+                          Manage
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </CardBody>
+      </Card>
+
       <ManageUserModal
         open={manageOpen}
         user={selectedUser}
@@ -172,26 +225,9 @@ function AdminUsers() {
   );
 }
 
-function Metric({ title, value, color }) {
-  const COLORS = {
-    indigo: "from-indigo-500 to-blue-500",
-    green: "from-green-500 to-emerald-500",
-    red: "from-red-500 to-pink-500",
-  };
-
-  return (
-    <div
-      className={`rounded-xl p-4 shadow-md text-white
-        bg-gradient-to-r ${COLORS[color]}`}
-    >
-      <p className="text-xs uppercase tracking-wide opacity-80">
-        {title}
-      </p>
-      <p className="text-2xl font-bold mt-1">
-        {value}
-      </p>
-    </div>
-  );
+function formatLocation(user) {
+  const parts = [user.location?.district, user.location?.state].filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : "Not scoped";
 }
 
 export default AdminUsers;

@@ -1,6 +1,7 @@
 import Notification from "../models/notification.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/ApiResponse.js";
+import ApiError from "../utils/ApiError.js";
 import { sendEmail } from "../utils/mail.js";
 
 // Send a notification (and email if provided)
@@ -28,16 +29,20 @@ export const sendNotification = async ({
   });
 
   if (email) {
-    await sendEmail({
-      email,
-      subject: title,
-      mailgenContent: {
-        body: {
-          name: name || "CityHelp User",
-          intro: message,
+    try {
+      await sendEmail({
+        email,
+        subject: title,
+        mailgenContent: {
+          body: {
+            name: name || "CityHelp User",
+            intro: message,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.warn("Notification email failed:", error.response?.data || error.message);
+    }
   }
 };
 

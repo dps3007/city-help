@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowRight, X } from "lucide-react";
+import Badge from "../../components/common/Badge";
 
 const PAGE_SIZE = 10;
 
@@ -46,105 +48,60 @@ function DepartmentComplaintsDrawer({
 
   return (
     <div className="fixed inset-0 z-[9999] flex">
+      <div className="flex-1 bg-slate-950/70 backdrop-blur-sm" onClick={onClose} />
 
-      {/* OVERLAY */}
-      <div
-        className="flex-1 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* DRAWER */}
-      <div className="w-[440px] bg-white shadow-2xl flex flex-col">
-
-        {/* HEADER */}
-        <div className="flex items-center justify-between px-5 py-4
-                        border-b bg-gradient-to-r from-blue-600 to-purple-600
-                        text-white">
-          <h3 className="font-semibold text-sm uppercase tracking-wide">
-            {department}
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-white/80 hover:text-white text-lg"
-          >
-            ✕
+      <div className="flex w-full max-w-lg flex-col border-l border-white/10 bg-slate-950/95 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyan-300/80">Group detail</p>
+            <h3 className="mt-2 text-lg font-semibold text-white">{department}</h3>
+          </div>
+          <button onClick={onClose} className="rounded-2xl border border-white/10 bg-white/5 p-2 text-slate-200 transition hover:bg-white/10">
+            <X size={16} />
           </button>
         </div>
 
-        {/* STATUS FILTERS */}
-        <div className="px-4 py-3 border-b flex gap-2 flex-wrap bg-gray-50">
-          {STATUS_FILTERS.map((s) => (
-            <button
-              key={s}
-              onClick={() => {
-                setStatus(s);
-                setPage(1);
-              }}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition
-                ${
-                  status === s
-                    ? "bg-blue-600 text-white shadow"
-                    : "bg-white text-gray-700 border hover:bg-gray-100"
-                }`}
-            >
-              {s}
-            </button>
-          ))}
+        <div className="border-b border-white/10 px-4 py-3">
+          <div className="flex flex-wrap gap-2">
+            {STATUS_FILTERS.map((filter) => (
+              <button
+                key={filter}
+                onClick={() => {
+                  setStatus(filter);
+                  setPage(1);
+                }}
+                className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${status === filter ? "border-cyan-400/20 bg-cyan-400/10 text-cyan-200" : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"}`}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* LIST */}
-        <div className="flex-1 overflow-y-auto divide-y">
+        <div className="flex-1 overflow-y-auto divide-y divide-white/10">
           {paginated.length === 0 ? (
-            <p className="p-4 text-sm text-gray-500">
-              No complaints found
-            </p>
+            <p className="p-4 text-sm text-slate-400">No complaints found</p>
           ) : (
-            paginated.map((c) => (
-              <div
-                key={c._id}
-                onClick={() =>
-                  navigate(`/complaints/${c._id}`)
-                }
-                className="p-4 cursor-pointer hover:bg-gray-50 transition"
-              >
-                <p className="font-medium text-sm text-gray-800">
-                  #{c._id.slice(-6)}
-                  <span className="ml-2 text-xs px-2 py-0.5 rounded-full
-                                   bg-gray-100 text-gray-600">
-                    {c.status}
-                  </span>
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {new Date(c.createdAt).toLocaleDateString()}
-                </p>
-              </div>
+            paginated.map((complaint) => (
+              <button key={complaint._id} onClick={() => navigate(`/complaints/${complaint._id}`)} className="flex w-full items-center justify-between px-4 py-4 text-left transition hover:bg-white/5">
+                <div>
+                  <p className="text-sm font-semibold text-white">#{complaint._id.slice(-6)}</p>
+                  <p className="mt-1 text-xs text-slate-400">{new Date(complaint.createdAt).toLocaleDateString()}</p>
+                </div>
+                <Badge status={complaint.status} />
+              </button>
             ))
           )}
         </div>
 
-        {/* PAGINATION */}
         {totalPages > 1 && (
-          <div className="border-t px-4 py-3 flex justify-between items-center bg-gray-50">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
-              className="text-sm px-3 py-1 rounded-full border
-                         disabled:opacity-40 hover:bg-white"
-            >
+          <div className="flex items-center justify-between border-t border-white/10 px-4 py-3">
+            <button disabled={page === 1} onClick={() => setPage((current) => current - 1)} className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white disabled:opacity-40">
               Prev
             </button>
-
-            <span className="text-xs font-medium text-gray-600">
-              Page {page} / {totalPages}
-            </span>
-
-            <button
-              disabled={page === totalPages}
-              onClick={() => setPage((p) => p + 1)}
-              className="text-sm px-3 py-1 rounded-full border
-                         disabled:opacity-40 hover:bg-white"
-            >
-              Next
+            <span className="text-xs font-medium text-slate-400">Page {page} / {totalPages}</span>
+            <button disabled={page === totalPages} onClick={() => setPage((current) => current + 1)} className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white disabled:opacity-40">
+              Next <ArrowRight size={14} className="inline-block" />
             </button>
           </div>
         )}

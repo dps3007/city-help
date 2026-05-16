@@ -81,11 +81,15 @@ export const addRewardPoints = async ({
   );
 
   //REDIS INVALIDATION 
-  await redis.del("leaderboard:global");
-  if (user?.municipalId) {
-    await redis.del(`leaderboard:local:${user.municipalId}`);
+  try {
+    await redis.del("leaderboard:global");
+    if (user?.municipalId) {
+      await redis.del(`leaderboard:local:${user.municipalId}`);
+    }
+    await redis.del("dashboard:*");
+  } catch (error) {
+    console.warn("Reward cache invalidation failed:", error.message);
   }
-  await redis.del("dashboard:*");
 };
 
 export const getRewardHistory = asyncHandler(async (req, res) => {

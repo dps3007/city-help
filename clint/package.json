@@ -17,12 +17,14 @@
     "framer-motion": "^12.31.0",
     "i18next": "^25.6.0",
     "leaflet": "^1.9.4",
+    "lucide-react": "^1.16.0",
     "mapbox-gl": "^3.18.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^6.26.2",
     "react-toastify": "^11.0.5",
+    "recharts": "^3.8.1",
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {

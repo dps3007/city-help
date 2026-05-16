@@ -16,8 +16,14 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
 
   const cacheKey = `dashboard:${role}:${location?.state || "all"}:${location?.district || "all"}:${department || "all"}:${_id}`;
 
-  // cache
-  const cached = await redis.get(cacheKey);
+  // cache (guarded) - a Redis failure should not bring down the dashboard
+  let cached = null;
+  try {
+    cached = await redis.get(cacheKey);
+  } catch (redisErr) {
+    console.error('Redis get error for dashboard cache:', redisErr?.message || redisErr);
+  }
+
   if (cached) {
     return res.status(200).json(
       new ApiResponse({
@@ -89,8 +95,12 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       totalComplaints - resolvedComplaints - closedComplaints,
   };
 
-  // Save to cache (TTL = 60 sec)
-  await redis.set(cacheKey, data, { ex: 60 });
+  // Save to cache (TTL = 60 sec) - ignore Redis errors
+  try {
+    await redis.set(cacheKey, data, { ex: 60 });
+  } catch (redisErr) {
+    console.error('Redis set error for dashboard cache:', redisErr?.message || redisErr);
+  }
 
   return res.status(200).json(new ApiResponse({ data }));
 });
@@ -232,7 +242,7 @@ export const getAllUsers = asyncHandler(async (req, res) => {
     filter.district = req.user.district;
   }
 
-  const users = await User.find(filter).select("-password");
+  const users = await User.find(filter).select("-communityPoints");
 
   return res.status(200).json(
     new ApiResponse({

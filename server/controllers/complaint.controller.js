@@ -1,4 +1,4 @@
-import { io } from "../server.js";
+import { io } from "../socket.js";
 import { redis } from "../config/redis.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import Complaint from "../models/complaint.model.js";
@@ -9,6 +9,14 @@ import { sendNotification } from "./notification.controller.js";
 import User from "../models/user.model.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 import Municipal from "../models/municipal.model.js";
+
+const invalidateCacheSafely = async (...keys) => {
+  try {
+    await Promise.all(keys.map((key) => redis.del(key)));
+  } catch (error) {
+    console.warn("Complaint cache invalidation failed:", error.message);
+  }
+};
 
 
 export const getAllComplaints = asyncHandler(async (req, res) => {
@@ -205,8 +213,7 @@ export const createComplaint = asyncHandler(async (req, res) => {
     complaintId: complaint._id,
   });
 
-  await redis.del("dashboard:*");
-  await redis.del("feed:*");
+  await invalidateCacheSafely("dashboard:*", "feed:*");
 
   return res.status(201).json(
     new ApiResponse({
@@ -362,7 +369,7 @@ export const verifyComplaint = asyncHandler(async (req, res) => {
     complaintId: complaint._id,
   });
 
-  await redis.del("dashboard:*");
+  await invalidateCacheSafely("dashboard:*");
 
   return res.status(200).json(
     new ApiResponse({ message: "Complaint verified successfully" })
@@ -426,7 +433,7 @@ export const assignComplaint = asyncHandler(async (req, res) => {
     complaintId: complaint._id,
   });
 
-  await redis.del("dashboard:*");
+  await invalidateCacheSafely("dashboard:*");
 
   return res.status(201).json(
     new ApiResponse({
@@ -475,7 +482,7 @@ export const startWork = asyncHandler(async (req, res) => {
     complaintId: complaint._id,
   });
 
-  await redis.del("dashboard:*");
+  await invalidateCacheSafely("dashboard:*");
 
   return res.status(200).json(
     new ApiResponse({ message: "Work started successfully", 
@@ -531,7 +538,7 @@ export const resolveComplaint = asyncHandler(async (req, res) => {
     complaintId: complaint._id,
   });
 
-  await redis.del("dashboard:*");
+  await invalidateCacheSafely("dashboard:*");
 
   return res.status(200).json(
     new ApiResponse({ message: "Complaint resolved successfully",
@@ -578,7 +585,7 @@ export const closeComplaint = asyncHandler(async (req, res) => {
     complaintId: complaint._id,
   });
 
-  await redis.del("dashboard:*");
+  await invalidateCacheSafely("dashboard:*");
 
   return res.status(200).json(
     new ApiResponse({
@@ -614,7 +621,7 @@ export const upvoteComplaint = asyncHandler(async (req, res) => {
     priority: complaint.priority,
   });
 
-  await redis.del("feed:*");
+  await invalidateCacheSafely("feed:*");
 
   res.json({
     upvoteCount: complaint.upvoteCount,
@@ -628,28 +635,57 @@ export const getFeed = asyncHandler(async (req, res) => {
 
   const cacheKey = `feed:${role}:${location?.state || "all"}:${location?.district || "all"}`;
 
-  const cached = await redis.get(cacheKey);
-  if (cached) {
-    return res.status(200).json(cached);
+  try {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.status(200).json(new ApiResponse({
+        message: "Feed retrieved from cache",
+        data: JSON.parse(cached),
+      }));
+    }
+  } catch (cacheErr) {
+    console.error("Cache retrieval error:", cacheErr);
+    // Continue without cache if there's an error
   }
 
-  // Base filter → only complaints with attachments
+  // Base filter → only complaints with attachments and not closed
   let filter = {
     attachments: { $exists: true, $not: { $size: 0 } },
+    status: { $ne: "CLOSED" },
   };
 
-  if (req.user.municipalId) {
-  filter.municipalId = req.user.municipalId;
-}
+  let sort = { createdAt: -1 };
 
-  // DISTRICT LEVEL
-  if (
-    ["CITIZEN", "OFFICER", "DEPT_HEAD", "DISTRICT_ADMIN"].includes(role)
-  ) {
+  // SUPER / CENTRAL → most voted across all complaints
+  if (["SUPER_ADMIN", "CENTRAL_ADMIN"].includes(role)) {
+    sort = { upvoteCount: -1, createdAt: -1 };
+  }
+
+  // STATE → most voted in the state
+  else if (role === "STATE_ADMIN") {
+    if (!location?.state) {
+      throw new ApiError(400, "User state not found. Please update your profile location.");
+    }
+
+    filter["location.state"] = {
+      $regex: `^${location.state}$`,
+      $options: "i",
+    };
+
+    sort = { upvoteCount: -1, createdAt: -1 };
+  }
+
+  // DISTRICT LEVEL → recent first in their district
+  else if (["CITIZEN", "OFFICER", "DEPT_HEAD", "DISTRICT_ADMIN"].includes(role)) {
     if (!location?.district) {
-      return res.status(400).json({
-        message: "User district not found",
-      });
+      throw new ApiError(400, "User district not found. Please update your profile location.");
+    }
+
+    if (location?.state) {
+      filter["location.state"] = {
+        $regex: `^${location.state}$`,
+        $options: "i",
+      };
     }
 
     filter["location.district"] = {
@@ -658,41 +694,24 @@ export const getFeed = asyncHandler(async (req, res) => {
     };
   }
 
-  //  STATE LEVEL
-  else if (role === "STATE_ADMIN") {
-    if (!location?.state) {
-      return res.status(400).json({
-        message: "User state not found",
-      });
-    }
-
-    filter["location.state"] = {
-      $regex: `^${location.state}$`,
-      $options: "i",
-    };
-  }
-
-  //  CENTRAL / SUPER → ALL INDIA
-  else if (["CENTRAL_ADMIN", "SUPER_ADMIN"].includes(role)) {
-    // no extra filter
-  }
-
   else {
-    return res.status(403).json({
-      message: "Role not allowed to view feed",
-    });
+    throw new ApiError(403, "Role not allowed to view feed");
   }
 
   const complaints = await Complaint.find(filter)
     .populate("citizen", "name avatar")
-    .sort({ createdAt: -1 });
+    .sort(sort);
 
-  //  Sort by upvotes length (reliable)
-  complaints.sort(
-    (a, b) => b.upvotes.length - a.upvotes.length
-  );
+  // Cache the results as JSON string
+  try {
+    await redis.set(cacheKey, JSON.stringify(complaints), { ex: 30 });
+  } catch (cacheErr) {
+    console.error("Cache storage error:", cacheErr);
+    // Continue without caching if there's an error
+  }
 
-  await redis.set(cacheKey, complaints, { ex: 30 });
-
-  res.status(200).json(complaints);
+  return res.status(200).json(new ApiResponse({
+    message: "Feed retrieved successfully",
+    data: complaints,
+  }));
 });

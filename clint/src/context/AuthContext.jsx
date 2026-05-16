@@ -1,8 +1,18 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { getSocket } from "../socket";
 
 const socket = getSocket();
-const AuthContext = createContext();
+const defaultAuthContextValue = {
+  user: null,
+  token: null,
+  loading: true,
+  isAuthenticated: false,
+  login: () => {},
+  logout: () => {},
+  updateUser: () => {},
+};
+
+const AuthContext = createContext(defaultAuthContextValue);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -96,4 +106,5 @@ export function AuthProvider({ children }) {
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export { AuthContext };
+export { defaultAuthContextValue };

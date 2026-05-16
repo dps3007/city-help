@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import User from "../models/user.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
@@ -71,7 +72,7 @@ export const login = asyncHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
   // 🔥 IMPORTANT: fetch fresh user WITHOUT password
-  const safeUser = await User.findById(user._id).select("-password");
+  const safeUser = await User.findById(user._id).select("-communityPoints");
 
   return res.status(200).json(
     new ApiResponse({
@@ -81,6 +82,82 @@ export const login = asyncHandler(async (req, res) => {
         accessToken,
         refreshToken,
       },
+    })
+  );
+});
+
+// FORGOT PASSWORD
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    throw new ApiError(400, "Email is required");
+  }
+
+  const user = await User.findOne({ email: email.trim().toLowerCase() });
+
+  if (!user) {
+    return res.status(200).json(
+      new ApiResponse({
+        message: "If an account exists, a password reset token has been generated",
+      })
+    );
+  }
+
+  const resetToken = user.generatePasswordResetToken();
+  await user.save({ validateBeforeSave: false });
+
+  const data =
+    process.env.NODE_ENV === "production"
+      ? null
+      : {
+          resetToken,
+        };
+
+  return res.status(200).json(
+    new ApiResponse({
+      message: "If an account exists, a password reset token has been generated",
+      data,
+    })
+  );
+});
+
+// RESET PASSWORD
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { token, password, confirmPassword } = req.body;
+
+  if (!token || !password || !confirmPassword) {
+    throw new ApiError(400, "Token, password and confirm password are required");
+  }
+
+  if (password !== confirmPassword) {
+    throw new ApiError(400, "Passwords do not match");
+  }
+
+  if (password.length < 6) {
+    throw new ApiError(400, "Password must be at least 6 characters long");
+  }
+
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetTokenExpiry: { $gt: Date.now() },
+  }).select("+password");
+
+  if (!user) {
+    throw new ApiError(400, "Invalid or expired password reset token");
+  }
+
+  user.password = password;
+  user.refreshTokens = [];
+  user.passwordResetToken = undefined;
+  user.passwordResetTokenExpiry = undefined;
+  await user.save();
+
+  return res.status(200).json(
+    new ApiResponse({
+      message: "Password reset successfully. Please log in again",
     })
   );
 });

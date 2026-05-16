@@ -1,5 +1,10 @@
 import { useState } from "react";
 import { createAdmin } from "../../services/admin.service";
+import { toast } from "react-toastify";
+import Modal from "../../components/ui/Modal";
+import Input from "../../components/ui/Input";
+import Select from "../../components/ui/Select";
+import Button from "../../components/common/Button";
 
 function AddAdminModal({ open, onClose, refresh }) {
   const [name, setName] = useState("");
@@ -24,60 +29,32 @@ function AddAdminModal({ open, onClose, refresh }) {
   await createAdmin(payload);
   refresh();
   onClose();
+  toast.success("Admin created");
 };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white w-[420px] rounded-lg p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Add New Admin</h2>
-
-        <input
-          placeholder="Name"
-          className="w-full border px-3 py-2 rounded"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-
-        <input
-          placeholder="Email"
-          className="w-full border px-3 py-2 rounded"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          className="w-full border px-3 py-2 rounded"
-        >
+    <Modal open={open} onClose={onClose} title="Add new admin" description="Provision a new staff account with role-based access.">
+      <div className="space-y-5">
+        <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} label="Name" />
+        <Input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} label="Email" />
+        <Select value={role} onChange={(e) => setRole(e.target.value)} label="Role">
           <option value="OFFICER">Officer</option>
           <option value="DEPT_HEAD">Dept Head</option>
           <option value="DISTRICT_ADMIN">District Admin</option>
           <option value="STATE_ADMIN">State Admin</option>
           <option value="CENTRAL_ADMIN">Central Admin</option>
-        </select>
+        </Select>
 
-          {role === "DEPT_HEAD" && (
-            <input
-              placeholder="Department"
-              className="w-full border px-3 py-2 rounded"
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-            />
-          )}
+        {role === "DEPT_HEAD" && (
+          <Input placeholder="Department" value={department} onChange={(e) => setDepartment(e.target.value)} label="Department" />
+        )}
 
-
-        <div className="flex justify-end gap-2 pt-2">
-          <button onClick={onClose}>Cancel</button>
-          <button
-            onClick={submit}
-            className="bg-green-600 text-white px-4 py-2 rounded"
-          >
-            Create Admin
-          </button>
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={submit}>Create admin</Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

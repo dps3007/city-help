@@ -1,14 +1,22 @@
 import { useEffect, useState, useMemo } from "react";
 import dayjs from "dayjs";
-import { getMyComplaints } from "../../services/complaint.service";
 import { Link } from "react-router-dom";
+import { Filter, Search } from "lucide-react";
+
+import { getMyComplaints } from "../../services/complaint.service";
+import SectionHeader from "../../components/ui/SectionHeader";
+import Card, { CardBody } from "../../components/ui/Card";
+import Input from "../../components/ui/Input";
+import Badge from "../../components/common/Badge";
+import EmptyState from "../../components/ui/EmptyState";
+import { TableSkeleton } from "../../components/ui/Skeleton";
+import Button from "../../components/common/Button";
 
 const PAGE_SIZE = 8;
 
 function MyComplaints() {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
@@ -27,184 +35,98 @@ function MyComplaints() {
     fetchComplaints();
   }, []);
 
-  /* ---------------- SEARCH ---------------- */
-
   const filteredComplaints = useMemo(() => {
     if (!search.trim()) return complaints;
-
     const q = search.toLowerCase();
-
-    return complaints.filter((c) =>
-      c._id.toLowerCase().includes(q) ||
-      c.category?.toLowerCase().includes(q) ||
-      c.status?.toLowerCase().includes(q)
-    );
+    return complaints.filter((c) => c._id.toLowerCase().includes(q) || c.category?.toLowerCase().includes(q) || c.status?.toLowerCase().includes(q));
   }, [complaints, search]);
 
-  /* ---------------- PAGINATION ---------------- */
-
   const totalPages = Math.ceil(filteredComplaints.length / PAGE_SIZE);
-
-  const paginatedComplaints = filteredComplaints.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
-  );
+  const paginatedComplaints = filteredComplaints.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   useEffect(() => {
     setPage(1);
   }, [search]);
 
   if (loading) {
-    return <p className="text-gray-600">Loading complaints...</p>;
+    return <TableSkeleton rows={5} />;
   }
 
   return (
-    <div className="space-y-6 bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 rounded-xl">
+    <div className="space-y-6">
+      <SectionHeader
+        eyebrow="Complaint archive"
+        title="My complaints"
+        description="Review your complaint history, current progress, assignment state, and resolution dates."
+        action={<div className="w-full sm:w-80"><Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by ID, category, or status" /></div>}
+      />
 
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-800">
-          Complaints Details
-        </h2>
+      <div className="flex flex-wrap gap-3">
+        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300"><Search size={14} /> Searchable archive</div>
+        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300"><Filter size={14} /> Status-aware filtering</div>
+      </div>
 
-        <input
-          type="text"
-          placeholder="Search by ID / Category / Status"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border px-3 py-2 rounded-lg text-sm w-72"
+      {paginatedComplaints.length === 0 ? (
+        <EmptyState
+          title="No complaints found"
+          description="Try a different search or file a new complaint to populate your archive."
+          action={<Link to="/complaints/new" className="inline-flex items-center rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-3 text-sm font-semibold text-white">File a complaint</Link>}
         />
-      </div>
+      ) : (
+        <div className="grid gap-4">
+          {paginatedComplaints.map((complaint) => (
+            <Card key={complaint._id} interactive>
+              <CardBody>
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex min-w-0 items-start gap-4">
+                    {complaint.attachments?.[0]?.url ? (
+                      <img src={complaint.attachments[0].url} alt="Complaint" className="h-20 w-20 rounded-2xl object-cover" />
+                    ) : (
+                      <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-xs font-semibold text-slate-400">No image</div>
+                    )}
 
-      {/* TABLE */}
-      <div className="bg-white/90 backdrop-blur rounded-xl shadow-md overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-            <tr>
-              <th className="px-4 py-3 text-left">ID</th>
-              <th className="px-4 py-3 text-left">Category</th>
-              <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-left">Upvotes</th>
-              <th className="px-4 py-3 text-left">Assigned To</th>
-              <th className="px-4 py-3 text-left">Created</th>
-              <th className="px-4 py-3 text-left">Resolved On</th>
-              <th className="px-4 py-3 text-left">View</th>
-            </tr>
-          </thead>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge status={complaint.status} />
+                        <span className="text-xs uppercase tracking-[0.24em] text-slate-500">#{complaint._id.slice(-6)}</span>
+                      </div>
+                      <h3 className="mt-2 text-lg font-semibold text-white">{complaint.category}</h3>
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-300">{complaint.description}</p>
+                      <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-400">
+                        <span>{dayjs(complaint.createdAt).format("DD MMM YYYY")}</span>
+                        <span>•</span>
+                        <span>{complaint.assignedTo?.name || "Unassigned"}</span>
+                        <span>•</span>
+                        <span>{complaint.upvoteCount || 0} upvotes</span>
+                      </div>
+                    </div>
+                  </div>
 
-          <tbody>
-            {paginatedComplaints.length === 0 && (
-              <tr>
-                <td
-                  colSpan="8"
-                  className="px-6 py-6 text-center text-gray-500"
-                >
-                  No complaints found
-                </td>
-              </tr>
-            )}
+                  <div className="flex items-center gap-3 lg:flex-col lg:items-end">
+                    <Link to={`/complaints/${complaint._id}`} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
+                      View details
+                    </Link>
+                    <p className="text-xs text-slate-400">Resolved: {complaint.resolvedAt ? dayjs(complaint.resolvedAt).format("DD MMM YYYY") : "—"}</p>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+      )}
 
-            {paginatedComplaints.map((c) => (
-              <tr
-                key={c._id}
-                className="border-t hover:bg-gray-50 transition"
-              >
-                <td className="px-4 py-3 font-medium">
-                  #{c._id.slice(-6)}
-                </td>
-
-                <td className="px-4 py-3">
-                  {c.category}
-                </td>
-
-                <td className="px-4 py-3">
-                  <StatusBadge status={c.status} />
-                </td>
-
-                <td className="px-4 py-3">
-                  {c.upvoteCount}
-                </td>
-
-                <td
-                  className={`px-4 py-3 font-medium ${
-                    !c.assignedTo ? "text-red-500" : "text-gray-800"
-                  }`}
-                >
-                  {c.assignedTo?.name || "Unassigned"}
-                </td>
-
-                <td className="px-4 py-3">
-                  {dayjs(c.createdAt).format("DD MMM YYYY")}
-                </td>
-
-                <td className="px-4 py-3">
-                  {c.resolvedAt
-                    ? dayjs(c.resolvedAt).format("DD MMM YYYY")
-                    : "—"}
-                </td>
-
-                <td className="px-4 py-3">
-                  <Link
-                    to={`/complaints/${c._id}`}
-                    className="text-blue-600 font-medium hover:underline"
-                  >
-                    View
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* PAGINATION */}
       {totalPages > 1 && (
-        <div className="flex justify-between items-center">
-          <button
-            disabled={page === 1}
-            onClick={() => setPage((p) => p - 1)}
-            className="px-4 py-1 rounded-full bg-white shadow disabled:opacity-50"
-          >
-            Prev
-          </button>
-
-          <span className="text-sm font-medium">
-            Page {page} / {totalPages}
-          </span>
-
-          <button
-            disabled={page === totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="px-4 py-1 rounded-full bg-white shadow disabled:opacity-50"
-          >
+        <div className="flex items-center justify-between">
+          <Button variant="secondary" disabled={page === 1} onClick={() => setPage((current) => current - 1)}>
+            Previous
+          </Button>
+          <span className="text-sm text-slate-300">Page {page} of {totalPages}</span>
+          <Button variant="secondary" disabled={page === totalPages} onClick={() => setPage((current) => current + 1)}>
             Next
-          </button>
+          </Button>
         </div>
       )}
     </div>
-  );
-}
-
-/* ===== STATUS BADGE ===== */
-function StatusBadge({ status }) {
-  const colors = {
-    SUBMITTED: "bg-gray-200 text-gray-700",
-    VERIFIED: "bg-blue-100 text-blue-700",
-    ASSIGNED: "bg-yellow-100 text-yellow-700",
-    IN_PROGRESS: "bg-orange-100 text-orange-700",
-    RESOLVED: "bg-green-100 text-green-700",
-    CLOSED: "bg-green-200 text-green-800",
-    REJECTED: "bg-red-100 text-red-700",
-  };
-
-  return (
-    <span
-      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-        colors[status] || "bg-gray-100 text-gray-600"
-      }`}
-    >
-      {status}
-    </span>
   );
 }
 

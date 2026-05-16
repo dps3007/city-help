@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import dayjs from "dayjs";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { updateAvatar, updateCurrentUser } from "../services/user.service";
+import SectionHeader from "../components/ui/SectionHeader";
+import Card, { CardBody, CardHeader } from "../components/ui/Card";
+import Button from "../components/common/Button";
+import { MapPin, LogOut, Edit2, CheckCircle, Camera } from "lucide-react";
+import { toast } from "react-toastify";
 
 /* ---------------- constants ---------------- */
 
@@ -43,7 +48,7 @@ function Profile() {
       setLoading(true);
       const res = await updateAvatar(file);
       updateUser(res.data.user);
-    } catch (err) {
+    } catch {
       alert("Failed to update profile photo");
     } finally {
       setLoading(false);
@@ -53,13 +58,18 @@ function Profile() {
   /* ---------------- location update ---------------- */
 
   const handleUpdateLocation = async () => {
+    if (!state.trim() || (showStateDistrict && !district.trim())) {
+      alert("State and district are required for district feed");
+      return;
+    }
+
     try {
       setLoading(true);
 
       const res = await updateCurrentUser({
-        state,
-        district,
-        city,
+        state: state.trim(),
+        district: district.trim(),
+        city: city.trim(),
       });
 
       updateUser(res.data.user);
@@ -97,150 +107,263 @@ function Profile() {
   );
 
   return (
-    <div className="max-w-xl mx-auto space-y-6 bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 rounded-xl shadow-sm">
+    <div className="space-y-6">
+      {/* PAGE HEADER */}
+      <SectionHeader
+        eyebrow="Account"
+        title="My Profile"
+        description="Manage your personal information and preferences"
+      />
 
-      {/* HEADER */}
-      <h2 className="text-xl font-semibold text-gray-800">
-        My Profile
-      </h2>
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* ================= MAIN COLUMN ================= */}
+        <div className="space-y-6 lg:col-span-2">
+          {/* AVATAR CARD */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <Camera className="text-cyan-300" size={20} />
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Profile Picture</h3>
+                  <p className="text-sm text-slate-400">Upload a new profile photo</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardBody className="space-y-4">
+              <div className="flex items-end gap-6">
+                <img
+                  src={user.avatar?.url}
+                  alt="Profile"
+                  className="h-24 w-24 rounded-full border border-white/10 object-cover"
+                />
+                <div className="flex-1 space-y-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setFile(e.target.files[0])}
+                    className="block w-full text-sm text-slate-300 file:mr-3 file:rounded-full file:border-0 file:bg-cyan-500/20 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-cyan-200 hover:file:bg-cyan-500/30"
+                  />
+                  <Button
+                    onClick={handleUpdateAvatar}
+                    disabled={loading || !file}
+                    className="w-full"
+                  >
+                    {loading ? "Uploading..." : "Update Photo"}
+                  </Button>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
 
-      {/* ---------------- Avatar ---------------- */}
-      <div className="flex items-center gap-4 bg-white rounded-xl p-4 shadow">
-        <img
-          src={user.avatar?.url}
-          alt="Profile"
-          className="w-20 h-20 rounded-full object-cover border"
-        />
+          {/* PERSONAL INFO CARD */}
+          <Card>
+            <CardHeader>
+              <h3 className="text-lg font-semibold text-white">Personal Information</h3>
+            </CardHeader>
+            <CardBody className="space-y-4">
+              <InfoField label="Full Name" value={user.name} />
+              <InfoField label="Email Address" value={user.email} />
+              <InfoField label="Account Role" value={user.role.replace(/_/g, " ")} />
+              <InfoField
+                label="Member Since"
+                value={dayjs(user.createdAt).format("DD MMM YYYY")}
+              />
+            </CardBody>
+          </Card>
 
-        <div>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setFile(e.target.files[0])}
-            className="text-sm"
-          />
+          {/* LOCATION CARD */}
+          {!hideLocationRoles.includes(user.role) && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <MapPin className="text-cyan-300" size={20} />
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">Location</h3>
+                    <p className="text-sm text-slate-400">Set your jurisdiction area</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardBody className="space-y-4">
+                {/* LOCATION DISPLAY */}
+                {(state || district || city) && (
+                  <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+                    <div className="flex items-center gap-2 text-cyan-300 mb-3">
+                      <CheckCircle size={16} />
+                      <span className="text-xs font-semibold uppercase">Current Location</span>
+                    </div>
+                    <div className="space-y-1">
+                      {city && <p className="text-sm text-white font-medium">{city}</p>}
+                      {district && <p className="text-sm text-slate-300">{district}</p>}
+                      {state && <p className="text-sm text-slate-400">{state}</p>}
+                    </div>
+                  </div>
+                )}
 
-          <button
-            onClick={handleUpdateAvatar}
-            disabled={loading}
-            className="mt-2 bg-gradient-to-r from-blue-600 to-purple-600
-                       text-white px-4 py-1.5 rounded-full text-sm
-                       hover:opacity-90 disabled:opacity-50"
-          >
-            {loading ? "Updating..." : "Change Photo"}
-          </button>
-        </div>
-      </div>
+                {/* LOCATION FORM */}
+                <div className="space-y-3 pt-2">
+                  {showStateOnly && (
+                    <div className="space-y-2">
+                      <label className="block text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                        State
+                      </label>
+                      <input
+                        value={state}
+                        onChange={(e) => setState(e.target.value)}
+                        placeholder="Enter your state"
+                        className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder-slate-500 transition focus:border-cyan-400/50 focus:outline-none focus:ring-1 focus:ring-cyan-400/30"
+                      />
+                    </div>
+                  )}
 
-      {/* ---------------- Info ---------------- */}
-      <div className="bg-white rounded-xl shadow p-4 space-y-3">
-        <Field label="Name" value={user.name} />
-        <Field label="Email" value={user.email} />
-        <Field label="Role" value={user.role.replace("_", " ")} />
+                  {showStateDistrict && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                          State
+                        </label>
+                        <input
+                          value={state}
+                          onChange={(e) => setState(e.target.value)}
+                          placeholder="Enter your state"
+                          className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder-slate-500 transition focus:border-cyan-400/50 focus:outline-none focus:ring-1 focus:ring-cyan-400/30"
+                        />
+                      </div>
 
-        {canEditDepartment && (
-          <div className="space-y-2 pt-2">
-            <label className="text-sm text-gray-500">
-              Department
-            </label>
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                          District
+                        </label>
+                        <input
+                          value={district}
+                          onChange={(e) => setDistrict(e.target.value)}
+                          placeholder="Enter your district"
+                          className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder-slate-500 transition focus:border-cyan-400/50 focus:outline-none focus:ring-1 focus:ring-cyan-400/30"
+                        />
+                      </div>
 
-            <select
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="w-full border px-3 py-2 rounded-lg text-sm"
-            >
-              <option value="">Select Department</option>
-              {DEPARTMENT_OPTIONS.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                          City
+                        </label>
+                        <input
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          placeholder="Enter your city"
+                          className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder-slate-500 transition focus:border-cyan-400/50 focus:outline-none focus:ring-1 focus:ring-cyan-400/30"
+                        />
+                      </div>
+                    </>
+                  )}
 
-            <button
-              onClick={handleUpdateDepartment}
-              disabled={loading || !department}
-              className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm
-                         hover:bg-purple-700 disabled:opacity-50"
-            >
-              {loading ? "Updating..." : "Update Department"}
-            </button>
-          </div>
-        )}
-
-        <Field
-          label="Joined On"
-          value={dayjs(user.createdAt).format("DD MMM YYYY")}
-        />
-      </div>
-
-      {/* ---------------- Location (ROLE RULES APPLIED) ---------------- */}
-      {!hideLocationRoles.includes(user.role) && (
-        <div className="bg-white rounded-xl shadow p-4 space-y-3">
-          <h3 className="font-medium text-gray-700">
-            Location Access
-          </h3>
-
-          {/* STATE ADMIN → STATE ONLY */}
-          {showStateOnly && (
-            <input
-              value={state}
-              onChange={(e) => setState(e.target.value)}
-              placeholder="State"
-              className="w-full border px-3 py-2 rounded-lg text-sm"
-            />
+                  <Button
+                    onClick={handleUpdateLocation}
+                    disabled={loading}
+                    className="w-full mt-4"
+                  >
+                    {loading ? "Saving..." : "Save Location"}
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
           )}
 
-          {/* DISTRICT ADMIN / DEPT HEAD / OFFICER → STATE + DISTRICT */}
-          {showStateDistrict && (
-            <>
-              <input
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-                placeholder="State"
-                className="w-full border px-3 py-2 rounded-lg text-sm"
-              />
+          {/* DEPARTMENT CARD */}
+          {canEditDepartment && (
+            <Card>
+              <CardHeader>
+                <h3 className="text-lg font-semibold text-white">Department Assignment</h3>
+              </CardHeader>
+              <CardBody className="space-y-3">
+                {department && (
+                  <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+                    <div className="flex items-center gap-2 text-cyan-300 mb-2">
+                      <CheckCircle size={16} />
+                      <span className="text-xs font-semibold uppercase">Current Assignment</span>
+                    </div>
+                    <p className="text-sm font-semibold text-white">{department}</p>
+                  </div>
+                )}
 
-              <input
-                value={district}
-                onChange={(e) => setDistrict(e.target.value)}
-                placeholder="District"
-                className="w-full border px-3 py-2 rounded-lg text-sm"
-              />
-            </>
+                <div className="space-y-2 pt-2">
+                  <label className="block text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                    Select Department
+                  </label>
+                  <select
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition focus:border-cyan-400/50 focus:outline-none focus:ring-1 focus:ring-cyan-400/30"
+                  >
+                    <option value="">Choose a department</option>
+                    {DEPARTMENT_OPTIONS.map((dept) => (
+                      <option key={dept} value={dept}>
+                        {dept}
+                      </option>
+                    ))}
+                  </select>
+
+                  <Button
+                    onClick={handleUpdateDepartment}
+                    disabled={loading || !department}
+                    className="w-full mt-4"
+                  >
+                    {loading ? "Updating..." : "Update Department"}
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
           )}
-
-          <button
-            onClick={handleUpdateLocation}
-            disabled={loading}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm
-                       hover:bg-green-700 disabled:opacity-50"
-          >
-            {loading ? "Saving..." : "Save Location"}
-          </button>
         </div>
-      )}
 
-      {/* ---------------- Logout ---------------- */}
-      <button
-        onClick={logout}
-        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
-      >
-        Logout
-      </button>
+        {/* ================= SIDEBAR ================= */}
+        <div className="space-y-6">
+          {/* ACCOUNT STATUS CARD */}
+          <Card>
+            <CardHeader>
+              <h3 className="text-lg font-semibold text-white">Account Status</h3>
+            </CardHeader>
+            <CardBody className="space-y-4">
+              <div className="flex items-center gap-3 rounded-2xl border border-green-500/20 bg-green-500/10 p-3">
+                <CheckCircle className="text-green-400" size={20} />
+                <div>
+                  <p className="text-xs font-semibold uppercase text-green-300">Active</p>
+                  <p className="text-xs text-green-200/80">Account is active</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 rounded-2xl border border-white/10 bg-white/5 p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Member Since</p>
+                <p className="text-sm font-medium text-white">
+                  {dayjs(user.createdAt).format("DD MMM YYYY")}
+                </p>
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* LOGOUT CARD */}
+          <Card>
+            <CardBody>
+              <Button
+                onClick={logout}
+                className="w-full bg-red-500/20 text-red-200 hover:bg-red-500/30"
+              >
+                <LogOut size={18} />
+                Logout
+              </Button>
+            </CardBody>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
 
 /* ---------- helper ---------- */
 
-function Field({ label, value }) {
+function InfoField({ label, value }) {
   return (
-    <div className="flex justify-between text-sm">
-      <span className="text-gray-500">{label}</span>
-      <span className="font-medium text-gray-800">
-        {value || "—"}
-      </span>
+    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-3">
+      <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{label}</span>
+      <span className="text-sm font-medium text-white">{value || "—"}</span>
     </div>
   );
 }

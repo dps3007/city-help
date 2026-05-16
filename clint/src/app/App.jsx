@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
+import { ToastContainer } from "react-toastify";
 
 // Public pages
 import Landing from "../pages/Landing";
@@ -31,11 +32,31 @@ function App() {
   const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) {
-    return <div style={{ padding: 40 }}>Loading CityHelp…</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center px-6">
+        <div className="surface max-w-md px-8 py-10 text-center">
+          <div className="mx-auto h-12 w-12 animate-pulse rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600" />
+          <h1 className="mt-5 text-2xl font-semibold text-white">Loading CityHelp</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
+            Preparing your civic workspace, notifications, and complaint context.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <Routes>
+    <>
+      <ToastContainer
+        position="top-right"
+        autoClose={2800}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        theme="dark"
+      />
+
+      <Routes>
       {/* ================= PUBLIC ROUTES ================= */}
       {!isAuthenticated && (
         <>
@@ -99,7 +120,8 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </>
       )}
-    </Routes>
+      </Routes>
+    </>
   );
 }
 
